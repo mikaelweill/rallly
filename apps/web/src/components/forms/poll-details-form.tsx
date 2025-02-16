@@ -6,6 +6,7 @@ import { useFormContext } from "react-hook-form";
 
 import { Trans } from "@/components/trans";
 import { useFormValidation } from "@/utils/form-validation";
+import { LocationPicker } from "@/components/location-picker/location-picker";
 
 import type { NewEventData } from "./types";
 
@@ -49,23 +50,17 @@ export const PollDetailsForm = () => {
         )}
       />
 
-      <FormItem>
-        <div>
-          <FormLabel className="inline-block" htmlFor="location">
-            {t("location")}
-          </FormLabel>
-          <span className="text-muted-foreground ml-1 text-sm">
-            <Trans i18nKey="optionalLabel" defaults="(Optional)" />
-          </span>
-        </div>
-        <Input
-          type="text"
-          id="location"
-          className="w-full"
-          placeholder={t("locationPlaceholder")}
-          {...register("location")}
-        />
-      </FormItem>
+      <FormField
+        control={form.control}
+        name="location"
+        render={({ field }) => (
+          <LocationPicker
+            value={field.value}
+            onChange={field.onChange}
+          />
+        )}
+      />
+
       <FormItem>
         <div>
           <FormLabel className="inline-block" htmlFor="description">
