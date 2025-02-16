@@ -114,7 +114,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                         <Trans i18nKey="optionalLabel" defaults="(Optional)" />
                     </span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full">
                     <Autocomplete
                         onLoad={onAutocompleteLoad}
                         onPlaceChanged={() => {
@@ -134,6 +134,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                                 onChange?.(place.formatted_address);
                             }
                         }}
+                        className="flex-1"
                     >
                         <Input
                             ref={inputRef}
