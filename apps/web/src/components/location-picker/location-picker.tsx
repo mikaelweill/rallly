@@ -1,4 +1,4 @@
-import { useLoadScript, GoogleMap, Marker } from "@react-google-maps/api";
+import { useLoadScript, GoogleMap, Marker, Autocomplete } from "@react-google-maps/api";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@rallly/ui/input";
 import { Button } from "@rallly/ui/button";
@@ -115,17 +115,36 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                     </span>
                 </div>
                 <div className="flex gap-2">
-                    <Input
-                        ref={inputRef}
-                        type="text"
-                        id="location"
-                        className="w-full"
-                        placeholder={t("locationPlaceholder")}
-                        defaultValue={value}
-                        onFocus={(e) => e.target.select()}
-                        // @ts-ignore
+                    <Autocomplete
                         onLoad={onAutocompleteLoad}
-                    />
+                        onPlaceChanged={() => {
+                            const place = autocompleteRef.current?.getPlace();
+                            if (!place?.geometry?.location) return;
+
+                            setSelectedPlace(place);
+                            const newCenter = {
+                                lat: place.geometry.location.lat(),
+                                lng: place.geometry.location.lng()
+                            };
+                            setCenter(newCenter);
+                            map?.setCenter(newCenter);
+                            map?.setZoom(17);
+
+                            if (place.formatted_address) {
+                                onChange?.(place.formatted_address);
+                            }
+                        }}
+                    >
+                        <Input
+                            ref={inputRef}
+                            type="text"
+                            id="location"
+                            className="w-full"
+                            placeholder={t("locationPlaceholder")}
+                            defaultValue={value}
+                            onFocus={(e) => e.target.select()}
+                        />
+                    </Autocomplete>
                     {value && (
                         <Button
                             variant="ghost"
