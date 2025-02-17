@@ -13,7 +13,7 @@ interface LocationMapProps {
     locations?: Location[];
     className?: string;
     interactive?: boolean;
-    onLocationChange?: (address: string) => void;
+    onLocationChange?: (address: string, latLng: { lat: number; lng: number }) => void;
     isLoaded: boolean;
 }
 
@@ -55,7 +55,7 @@ export function LocationMap({
                     locationString = `${placeName}, ${locationString}`;
                 }
 
-                onLocationChange?.(locationString);
+                onLocationChange?.(locationString, { lat: latLng.lat(), lng: latLng.lng() });
             }
         });
     }, [geocoder, onLocationChange]);

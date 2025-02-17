@@ -28,6 +28,7 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
     const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
     const [locations, setLocations] = useState<Location[]>([]);
     const [currentAddress, setCurrentAddress] = useState<string>(value ?? "");
+    const [currentLatLng, setCurrentLatLng] = useState<{ lat: number; lng: number } | null>(null);
     const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -41,13 +42,13 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
     }, []);
 
     const addLocation = useCallback(() => {
-        if (!selectedPlace || !selectedPlace.formatted_address) return;
+        if (!currentAddress) return;
 
         const newLocation: Location = {
-            address: selectedPlace.formatted_address,
-            placeId: selectedPlace.place_id,
-            lat: selectedPlace.geometry?.location?.lat(),
-            lng: selectedPlace.geometry?.location?.lng(),
+            address: currentAddress,
+            placeId: selectedPlace?.place_id,
+            lat: currentLatLng?.lat ?? selectedPlace?.geometry?.location?.lat(),
+            lng: currentLatLng?.lng ?? selectedPlace?.geometry?.location?.lng(),
         };
 
         if (multipleLocations) {
@@ -57,13 +58,14 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
             // Clear the input and selected place
             setCurrentAddress("");
             setSelectedPlace(null);
+            setCurrentLatLng(null);
             if (inputRef.current) {
                 inputRef.current.value = "";
             }
         } else {
             onChange?.(newLocation.address);
         }
-    }, [selectedPlace, multipleLocations, locations, onChange, onLocationsChange]);
+    }, [currentAddress, currentLatLng, selectedPlace, multipleLocations, locations, onChange, onLocationsChange]);
 
     const removeLocation = useCallback((index: number) => {
         const newLocations = locations.filter((_, i) => i !== index);
@@ -94,6 +96,7 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
                             if (!place?.geometry?.location) return;
 
                             setSelectedPlace(place);
+                            setCurrentLatLng(null); // Clear map-selected location
                             if (place.formatted_address) {
                                 let locationString = place.formatted_address;
                                 if (place.name && !locationString.startsWith(place.name)) {
@@ -118,7 +121,7 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
                             onFocus={(e) => e.target.select()}
                         />
                     </Autocomplete>
-                    {multipleLocations && selectedPlace && (
+                    {multipleLocations && currentAddress && (currentLatLng || selectedPlace) && (
                         <Button
                             variant="secondary"
                             onClick={addLocation}
@@ -133,6 +136,7 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
                                 onChange?.("");
                                 setSelectedPlace(null);
                                 setCurrentAddress("");
+                                setCurrentLatLng(null);
                             }}
                         >
                             Clear
@@ -164,8 +168,10 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
                     locations={locations}
                     className="h-full w-full"
                     interactive={true}
-                    onLocationChange={(newAddress) => {
+                    onLocationChange={(newAddress, latLng) => {
                         setCurrentAddress(newAddress);
+                        setCurrentLatLng(latLng);
+                        setSelectedPlace(null); // Clear autocomplete-selected place
                         if (!multipleLocations) {
                             onChange?.(newAddress);
                         }
