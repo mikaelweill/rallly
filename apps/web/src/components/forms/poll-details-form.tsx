@@ -10,9 +10,17 @@ import { LocationPicker } from "@/components/location-picker/location-picker";
 
 import type { NewEventData } from "./types";
 
+interface Location {
+  address: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+}
+
 export interface PollDetailsData {
   title: string;
   location: string;
+  locations?: Location[];
   description: string;
 }
 
@@ -52,11 +60,15 @@ export const PollDetailsForm = () => {
 
       <FormField
         control={form.control}
-        name="location"
+        name="locations"
         render={({ field }) => (
           <LocationPicker
-            value={field.value}
-            onChange={field.onChange}
+            multipleLocations={true}
+            onLocationsChange={(locations) => {
+              field.onChange(locations);
+              // Also update the single location field for backward compatibility
+              form.setValue("location", locations.map(loc => loc.address).join(" | "));
+            }}
           />
         )}
       />
