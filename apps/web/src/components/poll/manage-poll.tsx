@@ -170,9 +170,9 @@ const ManagePoll: React.FunctionComponent<{
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/poll/${poll.id}/edit-options`}>
+            <Link href={`/poll/${poll.id}/edit-times-and-locations`}>
               <DropdownMenuItemIconLabel icon={TableIcon}>
-                <Trans i18nKey="editOptions" />
+                <Trans i18nKey="editTimesAndLocations" defaults="Edit Times & Locations" />
               </DropdownMenuItemIconLabel>
             </Link>
           </DropdownMenuItem>

@@ -8,8 +8,6 @@ import { Trans } from "@/components/trans";
 import { useFormValidation } from "@/utils/form-validation";
 import { LocationPicker } from "@/components/location-picker/location-picker";
 
-import type { NewEventData } from "./types";
-
 interface Location {
   address: string;
   placeId?: string;
@@ -23,7 +21,11 @@ export interface PollDetailsData {
   description: string;
 }
 
-export const PollDetailsForm = () => {
+interface PollDetailsFormProps {
+  showLocationPicker?: boolean;
+}
+
+export const PollDetailsForm = ({ showLocationPicker = true }: PollDetailsFormProps) => {
   const { t } = useTranslation();
   const form = useFormContext<PollDetailsData>();
 
@@ -58,27 +60,29 @@ export const PollDetailsForm = () => {
         )}
       />
 
-      <FormField
-        control={control}
-        name="locations"
-        render={({ field }) => (
-          <LocationPicker
-            multipleLocations={true}
-            locations={field.value ?? []}
-            onLocationsChange={(locations) => {
-              console.log('Locations changed:', locations);
-              // Ensure we have all required fields
-              const validLocations = locations.map(loc => ({
-                address: loc.address,
-                placeId: loc.placeId,
-                lat: loc.lat,
-                lng: loc.lng
-              })).filter(loc => loc.address);
-              field.onChange(validLocations);
-            }}
-          />
-        )}
-      />
+      {showLocationPicker && (
+        <FormField
+          control={control}
+          name="locations"
+          render={({ field }) => (
+            <LocationPicker
+              multipleLocations={true}
+              locations={field.value ?? []}
+              onLocationsChange={(locations) => {
+                console.log('Locations changed:', locations);
+                // Ensure we have all required fields
+                const validLocations = locations.map(loc => ({
+                  address: loc.address,
+                  placeId: loc.placeId,
+                  lat: loc.lat,
+                  lng: loc.lng
+                })).filter(loc => loc.address);
+                field.onChange(validLocations);
+              }}
+            />
+          )}
+        />
+      )}
 
       <FormItem>
         <div>
