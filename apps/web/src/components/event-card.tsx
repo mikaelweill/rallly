@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription } from "@rallly/ui/card";
 import { Icon } from "@rallly/ui/icon";
 import dayjs from "dayjs";
 import { DotIcon, MapPinIcon, PauseIcon } from "lucide-react";
+import { useLoadScript } from "@react-google-maps/api";
 
 import TruncatedLinkify from "@/components/poll/truncated-linkify";
 import VoteIcon from "@/components/poll/vote-icon";
@@ -12,6 +13,9 @@ import { RandomGradientBar } from "@/components/random-gradient-bar";
 import { Trans } from "@/components/trans";
 import { usePoll } from "@/contexts/poll";
 import { useTranslation } from "@/i18n/client";
+import { LocationMap } from "@/components/location-map";
+
+const libraries: ["places"] = ["places"];
 
 function IconGuide() {
   return (
@@ -35,6 +39,12 @@ function IconGuide() {
 export function EventCard() {
   const poll = usePoll();
   const { t } = useTranslation();
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    libraries,
+  });
+
   return (
     <>
       <Card className="bg-gray-50">
@@ -80,12 +90,19 @@ export function EventCard() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-center">
             <IconGuide />
             {poll.location ? (
-              <p className="text-muted-foregroun truncate whitespace-nowrap text-sm">
-                <Icon>
-                  <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
-                </Icon>
-                <TruncatedLinkify>{poll.location}</TruncatedLinkify>
-              </p>
+              <div className="w-full space-y-2">
+                <p className="text-muted-foregroun truncate whitespace-nowrap text-sm">
+                  <Icon>
+                    <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
+                  </Icon>
+                  <TruncatedLinkify>{poll.location}</TruncatedLinkify>
+                </p>
+                <LocationMap
+                  address={poll.location}
+                  className="h-48 w-full"
+                  isLoaded={isLoaded}
+                />
+              </div>
             ) : null}
           </div>
         </CardContent>
