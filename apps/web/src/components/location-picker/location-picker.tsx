@@ -1,5 +1,5 @@
 import { Autocomplete, useLoadScript } from "@react-google-maps/api";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { Input } from "@rallly/ui/input";
 import { Button } from "@rallly/ui/button";
 import { FormItem, FormLabel } from "@rallly/ui/form";
@@ -21,16 +21,22 @@ interface LocationPickerProps {
     onChange?: (location: string) => void;
     onLocationsChange?: (locations: Location[]) => void;
     multipleLocations?: boolean;
+    locations?: Location[];
 }
 
-export function LocationPicker({ value, onChange, onLocationsChange, multipleLocations = false }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, onLocationsChange, multipleLocations = false, locations: initialLocations = [] }: LocationPickerProps) {
     const { t } = useTranslation();
     const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
-    const [locations, setLocations] = useState<Location[]>([]);
+    const [locations, setLocations] = useState<Location[]>(initialLocations);
     const [currentAddress, setCurrentAddress] = useState<string>(value ?? "");
     const [currentLatLng, setCurrentLatLng] = useState<{ lat: number; lng: number } | null>(null);
     const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
     const inputRef = useRef<HTMLInputElement | null>(null);
+
+    // Update locations when initialLocations changes
+    useEffect(() => {
+        setLocations(initialLocations);
+    }, [initialLocations]);
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",

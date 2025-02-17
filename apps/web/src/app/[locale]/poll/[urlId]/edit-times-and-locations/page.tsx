@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@rallly/ui/button";
-import { CardFooter } from "@rallly/ui/card";
+import { CardFooter, Card, CardHeader, CardTitle, CardContent } from "@rallly/ui/card";
 import { Form } from "@rallly/ui/form";
 import dayjs from "dayjs";
 import Link from "next/link";
@@ -161,33 +161,52 @@ const Page = () => {
                     }
                 })}
             >
-                <PollOptionsForm disableTimeZoneChange={true}>
-                    <div className="space-y-4">
-                        <LocationPicker
-                            multipleLocations={true}
-                            locations={form.watch("locations") ?? []}
-                            onLocationsChange={(locations) => {
-                                const validLocations = locations.map(loc => ({
-                                    address: loc.address,
-                                    placeId: loc.placeId,
-                                    lat: loc.lat,
-                                    lng: loc.lng
-                                })).filter(loc => loc.address);
-                                form.setValue("locations", validLocations);
-                            }}
-                        />
-                        <CardFooter className="justify-between">
-                            <Button asChild>
-                                <Link href={pollLink}>
-                                    <Trans i18nKey="cancel" />
-                                </Link>
-                            </Button>
-                            <Button type="submit" loading={isUpdating} variant="primary">
-                                <Trans i18nKey="save" />
-                            </Button>
-                        </CardFooter>
+                <div className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                <Trans i18nKey="editTimes" defaults="Edit Times" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <PollOptionsForm disableTimeZoneChange={true} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>
+                                <Trans i18nKey="editLocations" defaults="Edit Locations" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <LocationPicker
+                                multipleLocations={true}
+                                locations={form.watch("locations") ?? []}
+                                onLocationsChange={(locations) => {
+                                    const validLocations = locations.map(loc => ({
+                                        address: loc.address,
+                                        placeId: loc.placeId,
+                                        lat: loc.lat,
+                                        lng: loc.lng
+                                    })).filter(loc => loc.address);
+                                    form.setValue("locations", validLocations);
+                                }}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <div className="flex justify-between">
+                        <Button asChild>
+                            <Link href={pollLink}>
+                                <Trans i18nKey="cancel" />
+                            </Link>
+                        </Button>
+                        <Button type="submit" loading={isUpdating} variant="primary">
+                            <Trans i18nKey="save" />
+                        </Button>
                     </div>
-                </PollOptionsForm>
+                </div>
             </form>
         </Form>
     );
