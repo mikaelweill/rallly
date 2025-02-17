@@ -12,6 +12,10 @@
 - [x] Responsive map display
 - [x] Location storage in database
 - [x] Location display in poll view
+- [x] Support for multiple locations per poll
+- [x] Proper ordering of locations
+- [x] Location creation in new polls
+- [x] Location editing in existing polls
 
 ### 🚧 Distance Viewer (Not Started)
 - [ ] Display distances between participants and meeting location
@@ -32,7 +36,8 @@
 - [ ] Smart Time-Location Bundling
 
 ## Notes
-- Current implementation focuses on the core location selection and storage experience
-- Location data is properly saved in the database and displayed in polls
+- Core location functionality is now fully implemented and working
+- Multiple locations can be added, stored, and displayed in polls
+- Location data is properly saved in both new poll creation and editing
 - Next steps will involve implementing the distance viewer functionality
 - Optimal location finder will be implemented as the final major feature 
