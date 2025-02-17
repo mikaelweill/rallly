@@ -89,16 +89,21 @@ export function EventCard() {
           ) : null}
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-center">
             <IconGuide />
-            {poll.location ? (
+            {poll.locations && poll.locations.length > 0 ? (
               <div className="w-full space-y-2">
-                <p className="text-muted-foregroun truncate whitespace-nowrap text-sm">
-                  <Icon>
-                    <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
-                  </Icon>
-                  <TruncatedLinkify>{poll.location}</TruncatedLinkify>
-                </p>
+                <div className="space-y-1">
+                  {poll.locations.map((location, index) => (
+                    <p key={location.id} className="text-muted-foregroun truncate whitespace-nowrap text-sm">
+                      <Icon>
+                        <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
+                      </Icon>
+                      <TruncatedLinkify>{location.address}</TruncatedLinkify>
+                    </p>
+                  ))}
+                </div>
                 <LocationMap
-                  address={poll.location}
+                  address={poll.locations[0].address}
+                  locations={poll.locations}
                   className="h-48 w-full"
                   isLoaded={isLoaded}
                 />

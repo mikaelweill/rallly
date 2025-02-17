@@ -94,7 +94,16 @@ export const polls = router({
         select: {
           id: true,
           title: true,
-          location: true,
+          locations: {
+            select: {
+              id: true,
+              address: true,
+              placeId: true,
+              lat: true,
+              lng: true,
+              order: true,
+            },
+          },
           timeZone: true,
           createdAt: true,
           status: true,
@@ -136,8 +145,13 @@ export const polls = router({
       z.object({
         title: z.string().trim().min(1),
         timeZone: z.string().optional(),
-        location: z.string().optional(),
         description: z.string().optional(),
+        locations: z.array(z.object({
+          address: z.string(),
+          placeId: z.string().optional(),
+          lat: z.number().optional(),
+          lng: z.number().optional(),
+        })).optional(),
         hideParticipants: z.boolean().optional(),
         hideScores: z.boolean().optional(),
         disableComments: z.boolean().optional(),
@@ -171,7 +185,6 @@ export const polls = router({
           id: pollId,
           title: input.title,
           timeZone: input.timeZone,
-          location: input.location,
           description: input.description,
           adminUrlId: adminToken,
           participantUrlId,
@@ -180,11 +193,17 @@ export const polls = router({
             : { userId: ctx.user.id }),
           watchers: !ctx.user.isGuest
             ? {
-                create: {
-                  userId: ctx.user.id,
-                },
-              }
+              create: {
+                userId: ctx.user.id,
+              },
+            }
             : undefined,
+          locations: input.locations ? {
+            create: input.locations.map((location, index) => ({
+              ...location,
+              order: index,
+            })),
+          } : undefined,
           options: {
             createMany: {
               data: input.options.map((option) => ({
@@ -193,9 +212,9 @@ export const polls = router({
                   : dayjs(option.startDate).utc(true).toDate(),
                 duration: option.endDate
                   ? dayjs(option.endDate).diff(
-                      dayjs(option.startDate),
-                      "minute",
-                    )
+                    dayjs(option.startDate),
+                    "minute",
+                  )
                   : 0,
               })),
             },
@@ -239,8 +258,13 @@ export const polls = router({
         urlId: z.string(),
         title: z.string().optional(),
         timeZone: z.string().optional(),
-        location: z.string().optional(),
         description: z.string().optional(),
+        locations: z.array(z.object({
+          address: z.string(),
+          placeId: z.string().optional(),
+          lat: z.number().optional(),
+          lng: z.number().optional(),
+        })).optional(),
         optionsToDelete: z.string().array().optional(),
         optionsToAdd: z.string().array().optional(),
         closed: z.boolean().optional(),
@@ -252,6 +276,15 @@ export const polls = router({
     )
     .mutation(async ({ input }) => {
       const pollId = await getPollIdFromAdminUrlId(input.urlId);
+
+      // Delete existing locations if we're updating locations
+      if (input.locations !== undefined) {
+        await prisma.pollLocation.deleteMany({
+          where: {
+            pollId,
+          },
+        });
+      }
 
       if (input.optionsToDelete && input.optionsToDelete.length > 0) {
         await prisma.option.deleteMany({
@@ -294,7 +327,6 @@ export const polls = router({
         },
         data: {
           title: input.title,
-          location: input.location,
           description: input.description,
           timeZone: input.timeZone,
           closed: input.closed,
@@ -302,6 +334,12 @@ export const polls = router({
           hideParticipants: input.hideParticipants,
           disableComments: input.disableComments,
           requireParticipantEmail: input.requireParticipantEmail,
+          locations: input.locations ? {
+            create: input.locations.map((location, index) => ({
+              ...location,
+              order: index,
+            })),
+          } : undefined,
         },
       });
     }),
@@ -396,7 +434,6 @@ export const polls = router({
           id: true,
           timeZone: true,
           title: true,
-          location: true,
           description: true,
           createdAt: true,
           adminUrlId: true,
@@ -407,6 +444,19 @@ export const polls = router({
           disableComments: true,
           hideScores: true,
           requireParticipantEmail: true,
+          locations: {
+            select: {
+              id: true,
+              address: true,
+              placeId: true,
+              lat: true,
+              lng: true,
+              order: true,
+            },
+            orderBy: {
+              order: 'asc'
+            }
+          },
           options: {
             select: {
               id: true,
@@ -417,7 +467,13 @@ export const polls = router({
               startTime: "asc",
             },
           },
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            }
+          },
           userId: true,
           guestId: true,
           deleted: true,
@@ -474,8 +530,17 @@ export const polls = router({
           createdAt: true,
           timeZone: true,
           title: true,
-          location: true,
           description: true,
+          locations: {
+            select: {
+              id: true,
+              address: true,
+              placeId: true,
+              lat: true,
+              lng: true,
+              order: true,
+            },
+          },
           user: {
             select: {
               name: true,
@@ -575,7 +640,7 @@ export const polls = router({
 
       const event = ics.createEvent({
         title: poll.title,
-        location: poll.location ?? undefined,
+        location: poll.locations?.[0]?.address,
         description: poll.description ?? undefined,
         organizer: {
           name: poll.user.name,
@@ -584,24 +649,24 @@ export const polls = router({
         attendees: icsAttendees,
         ...(option.duration > 0
           ? {
-              start: [
-                utcStart.year(),
-                utcStart.month() + 1,
-                utcStart.date(),
-                utcStart.hour(),
-                utcStart.minute(),
-              ],
-              startInputType: poll.timeZone ? "utc" : "local",
-              duration: { minutes: option.duration },
-            }
+            start: [
+              utcStart.year(),
+              utcStart.month() + 1,
+              utcStart.date(),
+              utcStart.hour(),
+              utcStart.minute(),
+            ],
+            startInputType: poll.timeZone ? "utc" : "local",
+            duration: { minutes: option.duration },
+          }
           : {
-              start: [
-                eventStart.year(),
-                eventStart.month() + 1,
-                eventStart.date(),
-              ],
-              end: [eventEnd.year(), eventEnd.month() + 1, eventEnd.date()],
-            }),
+            start: [
+              eventStart.year(),
+              eventStart.month() + 1,
+              eventStart.date(),
+            ],
+            end: [eventEnd.year(), eventEnd.month() + 1, eventEnd.date()],
+          }),
       });
 
       if (event.error) {
@@ -666,7 +731,7 @@ export const polls = router({
           props: {
             name: poll.user.name,
             pollUrl: absoluteUrl(`/poll/${poll.id}`),
-            location: poll.location,
+            location: poll.locations?.[0]?.address,
             title: poll.title,
             attendees: poll.participants
               .filter((p) =>
@@ -767,7 +832,7 @@ export const polls = router({
           id: input.pollId,
         },
         select: {
-          location: true,
+          locations: true,
           description: true,
           timeZone: true,
           hideParticipants: true,
@@ -795,7 +860,7 @@ export const polls = router({
           title: input.newTitle,
           userId: ctx.user.id,
           timeZone: poll.timeZone,
-          location: poll.location,
+          locations: poll.locations,
           description: poll.description,
           hideParticipants: poll.hideParticipants,
           hideScores: poll.hideScores,

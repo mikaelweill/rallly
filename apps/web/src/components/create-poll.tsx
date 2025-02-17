@@ -47,7 +47,7 @@ export const CreatePoll: React.FunctionComponent = () => {
     defaultValues: {
       title: "",
       description: "",
-      location: "",
+      locations: [],
       view: "month",
       options: [],
       hideScores: false,
@@ -84,9 +84,9 @@ export const CreatePoll: React.FunctionComponent = () => {
           await createPoll.mutateAsync(
             {
               title: title,
-              location: formData?.location,
               description: formData?.description,
               timeZone: formData?.timeZone,
+              locations: formData?.locations,
               hideParticipants: formData?.hideParticipants,
               disableComments: formData?.disableComments,
               hideScores: formData?.hideScores,

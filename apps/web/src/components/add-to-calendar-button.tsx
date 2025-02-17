@@ -20,6 +20,7 @@ export function AddToCalendarButton({
   title,
   description,
   location,
+  locations,
   start,
   duration,
   organizer,
@@ -28,6 +29,7 @@ export function AddToCalendarButton({
   title: string;
   description?: string;
   location?: string;
+  locations?: { address: string }[];
   start: Date;
   duration: number;
   organizer?: {
@@ -36,13 +38,16 @@ export function AddToCalendarButton({
   };
   guests?: string[];
 }) {
+  // If locations array is provided, join all addresses with a separator
+  const locationString = locations?.length ? locations.map(loc => loc.address).join(" | ") : location;
+
   const calendarEvent: CalendarEvent = {
     title,
     description,
     start,
     allDay: duration === 0,
     duration: duration > 0 ? [duration, "minutes"] : undefined,
-    location,
+    location: locationString,
     organizer,
     guests,
     busy: true,

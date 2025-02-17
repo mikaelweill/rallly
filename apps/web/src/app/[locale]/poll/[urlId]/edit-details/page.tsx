@@ -36,7 +36,7 @@ const Page: NextPageWithLayout = () => {
   const form = useForm<PollDetailsData>({
     defaultValues: {
       title: poll.title,
-      location: poll.location ?? "",
+      locations: poll.locations ?? [],
       description: poll.description ?? "",
     },
   });
@@ -45,10 +45,29 @@ const Page: NextPageWithLayout = () => {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((data) => {
+          console.log('Submitting form with data:', data);
           //submit
           updatePollMutation(
-            { urlId, ...data },
-            { onSuccess: redirectBackToPoll },
+            {
+              urlId,
+              title: data.title,
+              description: data.description,
+              locations: data.locations?.map(loc => ({
+                address: loc.address,
+                placeId: loc.placeId,
+                lat: loc.lat,
+                lng: loc.lng
+              })),
+            },
+            {
+              onSuccess: () => {
+                console.log('Poll updated successfully');
+                redirectBackToPoll();
+              },
+              onError: (error) => {
+                console.error('Failed to update poll:', error);
+              }
+            },
           );
         })}
       >

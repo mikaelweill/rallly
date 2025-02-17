@@ -123,7 +123,7 @@ model Poll {
   deadline                DateTime?
   title                   String
   description             String?
-  location                String?
+  locations               PollLocation[]
   userId                  String?    @map("user_id")
   guestId                 String?    @map("guest_id")
   timeZone                String?    @map("time_zone")
@@ -150,6 +150,22 @@ model Poll {
 
   @@index([guestId])
   @@map("polls")
+}
+
+model PollLocation {
+  id        String   @id @default(cuid())
+  address   String
+  placeId   String?
+  lat       Float?
+  lng       Float?
+  pollId    String   @map("poll_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  order     Int      @default(0)    // To maintain the order of locations as added by the user
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId])
+  @@map("poll_locations")
 }
 
 model Event {

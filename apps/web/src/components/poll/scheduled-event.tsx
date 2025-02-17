@@ -110,7 +110,7 @@ export function ScheduledEvent() {
               description={poll.description ?? undefined}
               start={event.start}
               duration={event.duration}
-              location={poll.location ?? undefined}
+              locations={poll.locations}
               organizer={
                 poll.user
                   ? { name: poll.user.name, email: poll.user.email }

@@ -19,25 +19,25 @@ interface Location {
 
 export interface PollDetailsData {
   title: string;
-  location: string;
   locations?: Location[];
   description: string;
 }
 
 export const PollDetailsForm = () => {
   const { t } = useTranslation();
-  const form = useFormContext<NewEventData>();
+  const form = useFormContext<PollDetailsData>();
 
   const { requiredString } = useFormValidation();
   const {
     register,
     formState: { errors },
+    control,
   } = form;
 
   return (
     <div className="grid gap-4 py-1">
       <FormField
-        control={form.control}
+        control={control}
         name="title"
         rules={{
           validate: requiredString(t("title")),
@@ -59,15 +59,22 @@ export const PollDetailsForm = () => {
       />
 
       <FormField
-        control={form.control}
+        control={control}
         name="locations"
         render={({ field }) => (
           <LocationPicker
             multipleLocations={true}
+            locations={field.value ?? []}
             onLocationsChange={(locations) => {
-              field.onChange(locations);
-              // Also update the single location field for backward compatibility
-              form.setValue("location", locations.map(loc => loc.address).join(" | "));
+              console.log('Locations changed:', locations);
+              // Ensure we have all required fields
+              const validLocations = locations.map(loc => ({
+                address: loc.address,
+                placeId: loc.placeId,
+                lat: loc.lat,
+                lng: loc.lng
+              })).filter(loc => loc.address);
+              field.onChange(validLocations);
             }}
           />
         )}
