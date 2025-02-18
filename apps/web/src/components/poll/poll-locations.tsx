@@ -62,6 +62,7 @@ export function PollLocations() {
             });
             if (result.results[0]) {
                 setStartAddress(result.results[0].formatted_address);
+                setError(null);
             }
         } catch (error) {
             setError("Could not get your current location. Please enter an address manually.");
@@ -130,11 +131,16 @@ export function PollLocations() {
     };
 
     const handleLocationClick = async (location: typeof poll.locations[0]) => {
-        if (!userLocation || !location.lat || !location.lng) {
+        if (!userLocation) {
             setError("Please set a starting location first");
             return;
         }
 
+        if (!location.lat || !location.lng) {
+            return;
+        }
+
+        setError(null); // Clear any previous error
         setSelectedLocationId(location.id);
         const route = await calculateRoute(location);
         if (route) {
@@ -159,6 +165,7 @@ export function PollLocations() {
                                             lng: place.geometry.location.lng()
                                         });
                                         setStartAddress(place.formatted_address ?? "");
+                                        setError(null);
                                     }
                                 }}
                             >
