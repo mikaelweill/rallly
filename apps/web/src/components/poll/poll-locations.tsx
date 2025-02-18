@@ -1,7 +1,7 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
 import { MapPinIcon, NavigationIcon, CrosshairIcon } from "lucide-react";
-import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
+import { useLoadScript, Autocomplete, DirectionsService } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription } from "@rallly/ui/alert";
 import { Input } from "@rallly/ui/input";
@@ -71,15 +71,20 @@ export function PollLocations() {
 
         const directionsService = new google.maps.DirectionsService();
         try {
+            console.log("Calculating route from", userLocation, "to", destination);
             const result = await directionsService.route({
-                origin: userLocation,
-                destination: { lat: destination.lat, lng: destination.lng },
+                origin: new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                destination: new google.maps.LatLng(destination.lat, destination.lng),
                 travelMode: google.maps.TravelMode.DRIVING,
             });
+            console.log("Route result:", result);
             return result;
         } catch (error) {
             console.error("Error calculating route:", error);
-            return null;
+            if (error instanceof Error && error.message.includes("REQUEST_DENIED")) {
+                throw new Error("The Directions API is not enabled. Please contact the administrator.");
+            }
+            throw error;
         }
     }, [userLocation]);
 
@@ -128,12 +133,27 @@ export function PollLocations() {
     };
 
     const handleLocationClick = async (location: typeof poll.locations[0]) => {
-        if (!userLocation || !location.lat || !location.lng) return;
+        if (!userLocation || !location.lat || !location.lng) {
+            setError("Please set a starting location first");
+            return;
+        }
 
-        setSelectedLocationId(location.id);
-        const route = await calculateRoute(location);
-        if (route) {
-            setDirections(route);
+        try {
+            setSelectedLocationId(location.id);
+            const route = await calculateRoute(location);
+            if (route) {
+                setDirections(route);
+                setError(null); // Clear any previous errors
+            }
+        } catch (error) {
+            console.error("Route calculation failed:", error);
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError("Could not calculate route to this location");
+            }
+            // Clear any previous route when there's an error
+            setDirections(null);
         }
     };
 
@@ -142,7 +162,7 @@ export function PollLocations() {
             <div className="space-y-2 p-4">
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium">Locations</h3>
-                    <div className="flex gap-2">
+                    <div className="grid grid-cols-[1fr,auto,auto] gap-2">
                         {isLoaded && (
                             <Autocomplete
                                 onLoad={setAutocomplete}
@@ -154,6 +174,9 @@ export function PollLocations() {
                                             lng: place.geometry.location.lng()
                                         });
                                         setStartAddress(place.formatted_address ?? "");
+                                        // Clear previous route when changing location
+                                        setDirections(null);
+                                        setSelectedLocationId(null);
                                     }
                                 }}
                             >
@@ -162,7 +185,6 @@ export function PollLocations() {
                                     placeholder="Enter starting location..."
                                     value={startAddress}
                                     onChange={(e) => setStartAddress(e.target.value)}
-                                    className="flex-1"
                                 />
                             </Autocomplete>
                         )}
