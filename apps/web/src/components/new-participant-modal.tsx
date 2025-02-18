@@ -113,7 +113,11 @@ const VoteSummary = ({
     <div className={clsx("space-y-3 rounded border p-3", className)}>
       {Object.entries(voteByType).map(([type, ids]) => {
         if (ids.length === 0) return null;
-        return renderVoteDetails(type as VoteType, ids);
+        return (
+          <div key={type}>
+            {renderVoteDetails(type as VoteType, ids)}
+          </div>
+        );
       })}
     </div>
   );

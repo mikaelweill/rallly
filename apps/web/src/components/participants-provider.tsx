@@ -33,9 +33,16 @@ export const ParticipantsProvider: React.FunctionComponent<{
       return [];
     }
     return participants.filter((participant) => {
-      return participant.votes.some((vote) => {
+      // Check time votes
+      const hasTimeVote = participant.votes.some((vote) => {
         return vote.optionId === optionId && vote.type === voteType;
       });
+      if (hasTimeVote) return true;
+
+      // Check location votes
+      return participant.locationVotes?.some((vote) => {
+        return vote.locationId === optionId && vote.type === voteType;
+      }) ?? false;
     });
   };
   if (!participants) {

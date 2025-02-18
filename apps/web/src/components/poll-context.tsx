@@ -59,6 +59,7 @@ export const PollContextProvider: React.FunctionComponent<{
     (optionId: string) => {
       return (participants ?? []).reduce(
         (acc, curr) => {
+          // Check time votes
           curr.votes.forEach((vote) => {
             if (vote.optionId !== optionId) {
               return;
@@ -73,6 +74,23 @@ export const PollContextProvider: React.FunctionComponent<{
               acc.skip += 1;
             }
           });
+
+          // Check location votes
+          curr.locationVotes?.forEach((vote) => {
+            if (vote.locationId !== optionId) {
+              return;
+            }
+            if (vote.type === "yes") {
+              acc.yes += 1;
+            } else if (vote.type === "ifNeedBe") {
+              acc.ifNeedBe += 1;
+            } else if (vote.type === "no") {
+              acc.no += 1;
+            } else {
+              acc.skip += 1;
+            }
+          });
+
           return acc;
         },
         { yes: 0, ifNeedBe: 0, no: 0, skip: 0 },
@@ -112,6 +130,16 @@ export const PollContextProvider: React.FunctionComponent<{
       );
     });
 
+    // Add location votes
+    poll.locations?.forEach((location) => {
+      participantsByOptionId[location.id] = (participants ?? []).filter(
+        (participant) =>
+          participant.locationVotes?.some(
+            ({ type, locationId }) => locationId === location.id && type === "yes",
+          ) ?? false,
+      );
+    });
+
     return {
       optionIds,
       poll,
@@ -124,10 +152,20 @@ export const PollContextProvider: React.FunctionComponent<{
       getParticipantsWhoVotedForOption: (optionId: string) =>
         participantsByOptionId[optionId],
       getVote: (participantId, optionId) => {
-        const vote = getParticipantById(participantId)?.votes.find(
+        const participant = getParticipantById(participantId);
+        if (!participant) return undefined;
+
+        // Try to find a time vote first
+        const timeVote = participant.votes.find(
           (vote) => vote.optionId === optionId,
         );
-        return vote?.type;
+        if (timeVote) return timeVote.type;
+
+        // If no time vote found, try to find a location vote
+        const locationVote = participant.locationVotes?.find(
+          (vote) => vote.locationId === optionId,
+        );
+        return locationVote?.type;
       },
       getScore,
     };
@@ -149,13 +187,13 @@ export const PollContextProvider: React.FunctionComponent<{
 
 type OptionsContextValue =
   | {
-      pollType: "date";
-      options: ParsedDateOption[];
-    }
+    pollType: "date";
+    options: ParsedDateOption[];
+  }
   | {
-      pollType: "timeSlot";
-      options: ParsedTimeSlotOption[];
-    };
+    pollType: "timeSlot";
+    options: ParsedTimeSlotOption[];
+  };
 
 const OptionsContext = React.createContext<OptionsContextValue>({
   pollType: "date",
