@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 
 import { usePoll } from "@/contexts/poll";
+import { useDayjs } from "@/utils/dayjs";
 
 import { useAddParticipantMutation } from "./poll/mutations";
 import VoteIcon from "./poll/vote-icon";
@@ -48,6 +49,9 @@ const VoteSummary = ({
   votes: { optionId: string; type: VoteType }[] | { locationId: string; type: VoteType }[];
 }) => {
   const { t } = useTranslation();
+  const poll = usePoll();
+  const { dayjs, adjustTimeZone } = useDayjs();
+
   const voteByType = votes.reduce<Record<VoteType, string[]>>(
     (acc, vote) => {
       acc[vote.type] = [...acc[vote.type], "optionId" in vote ? vote.optionId : vote.locationId];
@@ -56,30 +60,60 @@ const VoteSummary = ({
     { yes: [], ifNeedBe: [], no: [] },
   );
 
-  const voteTypes = Object.keys(voteByType) as VoteType[];
+  const renderVoteDetails = (voteType: VoteType, voteIds: string[]) => {
+    const items = voteIds.map((id) => {
+      if ("optionId" in votes[0]) {
+        // Time votes
+        const option = poll.options.find((opt) => opt.id === id);
+        if (!option) return null;
 
-  return (
-    <div
-      className={clsx("flex flex-wrap gap-1.5 rounded border p-1.5", className)}
-    >
-      {voteTypes.map((voteType) => {
-        const votes = voteByType[voteType];
-        const count = votes.length;
-        if (count === 0) {
-          return null;
-        }
+        const start = adjustTimeZone(option.startTime, !poll.timeZone);
+        const end = option.duration > 0
+          ? adjustTimeZone(dayjs(option.startTime).add(option.duration, "minutes"), !poll.timeZone)
+          : null;
+
         return (
-          <div
-            key={voteType}
-            className="flex h-8 select-none gap-2.5 rounded-lg border bg-gray-50 p-1 text-sm"
-          >
-            <div className="flex items-center gap-2">
-              <VoteIcon type={voteType} />
-              <div className="text-muted-foreground">{t(voteType)}</div>
-            </div>
-            <Badge>{voteByType[voteType].length}</Badge>
+          <div key={id} className="text-sm text-muted-foreground">
+            <div>{start.format("dddd, LL")}</div>
+            {end ? (
+              <div className="text-sm opacity-75">
+                {`${start.format("LT")} - ${end.format(poll.timeZone ? "LT z" : "LT")}`}
+              </div>
+            ) : (
+              <div className="text-sm opacity-75">{t("allDay")}</div>
+            )}
           </div>
         );
+      } else {
+        // Location votes
+        const location = poll.locations?.find((loc) => loc.id === id);
+        if (!location) return null;
+        return (
+          <div key={id} className="text-sm text-muted-foreground">
+            {location.address}
+          </div>
+        );
+      }
+    });
+
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <VoteIcon type={voteType} />
+          <div className="font-medium">{t(voteType)}</div>
+        </div>
+        <div className="ml-6 space-y-2">
+          {items}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={clsx("space-y-3 rounded border p-3", className)}>
+      {Object.entries(voteByType).map(([type, ids]) => {
+        if (ids.length === 0) return null;
+        return renderVoteDetails(type as VoteType, ids);
       })}
     </div>
   );
