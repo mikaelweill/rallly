@@ -1,7 +1,8 @@
-import { GoogleMap, Marker } from "@react-google-maps/api";
+import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 
 interface Location {
+    id: string;
     address: string;
     placeId?: string;
     lat?: number;
@@ -16,6 +17,8 @@ interface LocationMapProps {
     onLocationChange?: (address: string, latLng: { lat: number; lng: number }) => void;
     isLoaded: boolean;
     userLocation?: { lat: number; lng: number };
+    directions?: google.maps.DirectionsResult | null;
+    selectedLocationId?: string | null;
 }
 
 export function LocationMap({
@@ -25,7 +28,9 @@ export function LocationMap({
     interactive = false,
     onLocationChange,
     isLoaded,
-    userLocation
+    userLocation,
+    directions,
+    selectedLocationId
 }: LocationMapProps) {
     const geocoder = useMemo(() => isLoaded ? new google.maps.Geocoder() : null, [isLoaded]);
     const mapRef = useRef<google.maps.Map | null>(null);
@@ -76,63 +81,18 @@ export function LocationMap({
             }
         });
 
-        // If we have a current address location, include it too
-        if (hasLocation) {
-            bounds.extend(center);
+        // Add user location if available
+        if (userLocation) {
+            bounds.extend(userLocation);
             hasValidPoints = true;
         }
 
         if (hasValidPoints) {
-            // Add padding to the bounds
-            const padding = {
-                top: 50,
-                right: 50,
-                bottom: 50,
-                left: 50
-            };
-
-            mapRef.current.fitBounds(bounds, padding);
-
-            // Get the zoom level after fitting bounds
-            const zoom = mapRef.current.getZoom();
-
-            // If we have multiple locations and the zoom is too high, adjust it
-            if (zoom !== undefined) {
-                if (locations.length > 1) {
-                    // Calculate the distance between the bounds corners
-                    const ne = bounds.getNorthEast();
-                    const sw = bounds.getSouthWest();
-
-                    try {
-                        const distance = google.maps.geometry?.spherical?.computeDistanceBetween(ne, sw);
-
-                        // Adjust zoom based on distance
-                        if (distance && distance > 1000000) { // More than 1000km
-                            mapRef.current.setZoom(4);
-                        } else if (distance && distance > 100000) { // More than 100km
-                            mapRef.current.setZoom(6);
-                        } else if (distance && distance > 10000) { // More than 10km
-                            mapRef.current.setZoom(8);
-                        } else if (zoom > 16) {
-                            mapRef.current.setZoom(16);
-                        }
-                    } catch (error) {
-                        // If we can't calculate the distance, use a simpler approach
-                        // based on the number of locations
-                        if (locations.length > 5) {
-                            mapRef.current.setZoom(4);
-                        } else if (locations.length > 2) {
-                            mapRef.current.setZoom(6);
-                        } else if (zoom > 16) {
-                            mapRef.current.setZoom(16);
-                        }
-                    }
-                } else if (zoom > 18) {
-                    mapRef.current.setZoom(18);
-                }
-            }
+            mapRef.current.fitBounds(bounds, {
+                padding: 50
+            });
         }
-    }, [locations, hasLocation, center, isLoaded]);
+    }, [locations, userLocation, isLoaded]);
 
     useEffect(() => {
         if (geocoder && address) {
@@ -151,7 +111,7 @@ export function LocationMap({
 
     useEffect(() => {
         fitBoundsToLocations();
-    }, [fitBoundsToLocations]);
+    }, [fitBoundsToLocations, userLocation, directions]);
 
     const mapOptions = useMemo(() => ({
         disableDefaultUI: true,
@@ -175,8 +135,10 @@ export function LocationMap({
                 options={mapOptions}
                 onClick={interactive ? (e) => {
                     if (e.latLng) {
-                        setCenter({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-                        updateLocationFromLatLng(e.latLng);
+                        const lat = e.latLng.lat();
+                        const lng = e.latLng.lng();
+                        setCenter({ lat, lng });
+                        onLocationChange?.(address, { lat, lng });
                     }
                 } : undefined}
                 onLoad={(map) => {
@@ -199,9 +161,10 @@ export function LocationMap({
                 {locations.map((location, index) => (
                     location.lat && location.lng ? (
                         <Marker
-                            key={location.placeId ?? index}
+                            key={location.id}
                             position={{ lat: location.lat, lng: location.lng }}
                             label={(index + 1).toString()}
+                            animation={selectedLocationId === location.id ? google.maps.Animation.BOUNCE : undefined}
                         />
                     ) : null
                 ))}
@@ -215,6 +178,18 @@ export function LocationMap({
                             fillOpacity: 1,
                             strokeColor: "#ffffff",
                             strokeWeight: 2,
+                        }}
+                    />
+                )}
+                {directions && (
+                    <DirectionsRenderer
+                        directions={directions}
+                        options={{
+                            suppressMarkers: true,
+                            polylineOptions: {
+                                strokeColor: "#4F46E5",
+                                strokeWeight: 4,
+                            },
                         }}
                     />
                 )}
