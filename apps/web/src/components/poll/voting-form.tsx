@@ -31,12 +31,20 @@ const formSchema = z.object({
       })
       .optional(),
   ),
+  locationVotes: z.array(
+    z
+      .object({
+        locationId: z.string(),
+        type: z.enum(["yes", "no", "ifNeedBe"]).optional(),
+      })
+      .optional(),
+  ),
 });
 
 type VotingFormValues = z.infer<typeof formSchema>;
 
 export const useVotingForm = () => {
-  const { options } = usePoll();
+  const { options, locations } = usePoll();
   const { participants } = useParticipants();
   const form = useFormContext<VotingFormValues>();
 
@@ -49,6 +57,9 @@ export const useVotingForm = () => {
         votes: options.map((option) => ({
           optionId: option.id,
         })),
+        locationVotes: locations?.map((location) => ({
+          locationId: location.id,
+        })) ?? [],
       });
     },
     setEditingParticipantId: (newParticipantId: string) => {
@@ -62,6 +73,12 @@ export const useVotingForm = () => {
             type: participant.votes.find((vote) => vote.optionId === option.id)
               ?.type,
           })),
+          locationVotes: locations?.map((location) => ({
+            locationId: location.id,
+            type: participant.locationVotes?.find(
+              (vote) => vote.locationId === location.id,
+            )?.type,
+          })) ?? [],
         });
       } else {
         console.error("Participant not found");
@@ -74,12 +91,15 @@ export const useVotingForm = () => {
         votes: options.map((option) => ({
           optionId: option.id,
         })),
+        locationVotes: locations?.map((location) => ({
+          locationId: location.id,
+        })) ?? [],
       }),
   };
 };
 
 export const VotingForm = ({ children }: React.PropsWithChildren) => {
-  const { id: pollId, options } = usePoll();
+  const { id: pollId, options, locations } = usePoll();
   const updateParticipant = useUpdateParticipantMutation();
   const { participants } = useParticipants();
 
@@ -90,6 +110,7 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
 
   const role = useRole();
   const optionIds = options.map((option) => option.id);
+  const locationIds = locations?.map((location) => location.id) ?? [];
 
   const [isNewParticipantModalOpen, setIsNewParticipantModalOpen] =
     React.useState(false);
@@ -107,6 +128,9 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
       votes: options.map((option) => ({
         optionId: option.id,
       })),
+      locationVotes: locations?.map((location) => ({
+        locationId: location.id,
+      })) ?? [],
     },
   });
 
@@ -117,11 +141,11 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
         onSubmit={form.handleSubmit(async (data) => {
           if (data.participantId) {
             // update participant
-
             await updateParticipant.mutateAsync({
               participantId: data.participantId,
               pollId,
               votes: normalizeVotes(optionIds, data.votes),
+              locationVotes: normalizeVotes(locationIds, data.locationVotes),
             });
 
             form.reset({
@@ -130,6 +154,9 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
               votes: options.map((option) => ({
                 optionId: option.id,
               })),
+              locationVotes: locations?.map((location) => ({
+                locationId: location.id,
+              })) ?? [],
             });
           } else {
             // new participant
@@ -152,6 +179,7 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
           </DialogHeader>
           <NewParticipantForm
             votes={normalizeVotes(optionIds, form.watch("votes"))}
+            locationVotes={normalizeVotes(locationIds, form.watch("locationVotes"))}
             onSubmit={(newParticipant) => {
               form.reset({
                 mode: "view",
@@ -159,6 +187,9 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
                 votes: options.map((option) => ({
                   optionId: option.id,
                 })),
+                locationVotes: locations?.map((location) => ({
+                  locationId: location.id,
+                })) ?? [],
               });
               setIsNewParticipantModalOpen(false);
             }}

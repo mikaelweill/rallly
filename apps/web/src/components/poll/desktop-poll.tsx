@@ -8,6 +8,7 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ExpandIcon,
+  MapPinIcon,
   PlusIcon,
   ShrinkIcon,
   Users2Icon,
@@ -36,6 +37,8 @@ import {
 import ParticipantRow from "./desktop-poll/participant-row";
 import ParticipantRowForm from "./desktop-poll/participant-row-form";
 import PollHeader from "./desktop-poll/poll-header";
+import LocationVotingForm from "./location-voting-form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rallly/ui/tabs";
 
 function EscapeListener({ onEscape }: { onEscape: () => void }) {
   React.useEffect(() => {
@@ -129,6 +132,8 @@ const DesktopPoll: React.FunctionComponent = () => {
 
   const { x } = useScroll(scrollRef);
 
+  const [activeTab, setActiveTab] = React.useState<"times" | "locations">("times");
+
   function TableControls() {
     return (
       <div className="flex items-center gap-4">
@@ -165,8 +170,8 @@ const DesktopPoll: React.FunctionComponent = () => {
                     size="sm"
                     disabled={Boolean(
                       scrollRef.current &&
-                        x + scrollRef.current.offsetWidth >=
-                          scrollRef.current.scrollWidth,
+                      x + scrollRef.current.offsetWidth >=
+                      scrollRef.current.scrollWidth,
                     )}
                     onClick={() => {
                       goToNextPage();
@@ -229,164 +234,196 @@ const DesktopPoll: React.FunctionComponent = () => {
   }
 
   return (
-    <Card>
-      <div ref={measureRef} style={{ height: expanded ? height : undefined }}>
-        <div
-          className={cn(
-            expanded
-              ? "fixed left-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-900/25 p-8"
-              : "",
-          )}
-        >
-          <div
-            className={cn(
-              "flex max-h-full max-w-7xl flex-col overflow-hidden rounded-md bg-white",
-              {
-                "shadow-huge": expanded,
-              },
+    <div className="flex h-full flex-col">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "times" | "locations")}>
+        <div className="border-b px-4">
+          <TabsList>
+            <TabsTrigger value="times">
+              <Icon>
+                <Users2Icon />
+              </Icon>
+              {t("times")}
+            </TabsTrigger>
+            {poll.locations && poll.locations.length > 0 && (
+              <TabsTrigger value="locations">
+                <Icon>
+                  <MapPinIcon />
+                </Icon>
+                {t("locations")}
+              </TabsTrigger>
             )}
-          >
-            <CardHeader className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-x-2.5">
-                <CardTitle>
-                  <Trans i18nKey="participants" />
-                </CardTitle>
-                <Badge>{participants.length}</Badge>
-                {canAddNewParticipant && mode !== "new" ? (
-                  <Button
-                    className="ml-2"
-                    size="sm"
-                    data-testid="add-participant-button"
-                    onClick={() => {
-                      votingForm.newParticipant();
-                    }}
-                  >
-                    <Icon>
-                      <PlusIcon />
-                    </Icon>
-                  </Button>
-                ) : null}
-              </div>
-              <TableControls />
-            </CardHeader>
-            {poll.options[0]?.duration !== 0 && poll.timeZone ? (
-              <div className="border-b bg-gray-50 px-4 py-3">
-                <TimesShownIn />
-              </div>
-            ) : null}
-            {participants.length > 0 || mode !== "view" ? (
-              <div className="relative flex min-h-0 flex-col">
+          </TabsList>
+        </div>
+        <TabsContent value="times" className="h-full">
+          <Card>
+            <div ref={measureRef} style={{ height: expanded ? height : undefined }}>
+              <div
+                className={cn(
+                  expanded
+                    ? "fixed left-0 top-0 z-50 flex h-full w-full items-center justify-center bg-gray-900/25 p-8"
+                    : "",
+                )}
+              >
                 <div
-                  aria-hidden="true"
                   className={cn(
-                    "pointer-events-none absolute bottom-0 left-[240px] top-0 z-30 w-4 border-l bg-gradient-to-r from-gray-800/5 via-transparent to-transparent transition-opacity",
-                    x > 0 ? "opacity-100" : "opacity-0",
-                  )}
-                />
-
-                <RemoveScroll
-                  enabled={expanded}
-                  ref={scrollRef}
-                  className={cn(
-                    "scrollbar-thin hover:scrollbar-thumb-gray-400 scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative z-10 flex-grow overflow-auto scroll-smooth",
+                    "flex max-h-full max-w-7xl flex-col overflow-hidden rounded-md bg-white",
+                    {
+                      "shadow-huge": expanded,
+                    },
                   )}
                 >
-                  <table className="w-full table-auto border-separate border-spacing-0 bg-gray-50">
-                    <thead>
-                      <PollHeader />
-                    </thead>
-                    <tbody>
-                      {mode === "new" ? (
-                        <ParticipantRowForm isNew={true} />
+                  <CardHeader className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-x-2.5">
+                      <CardTitle>
+                        <Trans i18nKey="participants" />
+                      </CardTitle>
+                      <Badge>{participants.length}</Badge>
+                      {canAddNewParticipant && mode !== "new" ? (
+                        <Button
+                          className="ml-2"
+                          size="sm"
+                          data-testid="add-participant-button"
+                          onClick={() => {
+                            votingForm.newParticipant();
+                          }}
+                        >
+                          <Icon>
+                            <PlusIcon />
+                          </Icon>
+                        </Button>
                       ) : null}
-                      {visibleParticipants.length > 0
-                        ? visibleParticipants.map((participant, i) => {
-                            return (
-                              <ParticipantRow
-                                key={i}
-                                participant={{
-                                  id: participant.id,
-                                  name: participant.name,
-                                  userId: participant.userId ?? undefined,
-                                  guestId: participant.guestId ?? undefined,
-                                  email: participant.email ?? undefined,
-                                  votes: participant.votes,
-                                }}
-                                editMode={
-                                  votingForm.watch("mode") === "edit" &&
-                                  votingForm.watch("participantId") ===
-                                    participant.id
-                                }
-                                className={
-                                  i === visibleParticipants.length - 1
-                                    ? "last-row"
-                                    : ""
-                                }
-                                onChangeEditMode={(isEditing) => {
-                                  if (isEditing) {
-                                    votingForm.setEditingParticipantId(
-                                      participant.id,
-                                    );
-                                  }
-                                }}
-                              />
-                            );
-                          })
-                        : null}
-                    </tbody>
-                  </table>
-                  {mode === "new" ? (
-                    <div className="sticky left-[240px] flex w-[calc(100%-240px)] items-center justify-between gap-4 border-l border-t bg-gray-50 p-3">
-                      <Button
-                        onClick={() => {
-                          votingForm.cancel();
-                        }}
-                      >
-                        <Trans i18nKey="cancel" />
-                      </Button>
-                      <p className="hidden min-w-0 truncate text-sm md:block">
-                        <Trans
-                          i18nKey="saveInstruction"
-                          values={{
-                            action: mode === "new" ? t("continue") : t("save"),
-                          }}
-                          components={{
-                            b: <strong className="font-semibold" />,
-                          }}
-                        />
-                      </p>
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        form="voting-form"
-                      >
-                        <Trans i18nKey="continue" />
-                      </Button>
+                    </div>
+                    <TableControls />
+                  </CardHeader>
+                  {poll.options[0]?.duration !== 0 && poll.timeZone ? (
+                    <div className="border-b bg-gray-50 px-4 py-3">
+                      <TimesShownIn />
                     </div>
                   ) : null}
-                </RemoveScroll>
+                  {participants.length > 0 || mode !== "view" ? (
+                    <div className="relative flex min-h-0 flex-col">
+                      <div
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute bottom-0 left-[240px] top-0 z-30 w-4 border-l bg-gradient-to-r from-gray-800/5 via-transparent to-transparent transition-opacity",
+                          x > 0 ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+
+                      <RemoveScroll
+                        enabled={expanded}
+                        ref={scrollRef}
+                        className={cn(
+                          "scrollbar-thin hover:scrollbar-thumb-gray-400 scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative z-10 flex-grow overflow-auto scroll-smooth",
+                        )}
+                      >
+                        <table className="w-full table-auto border-separate border-spacing-0 bg-gray-50">
+                          <thead>
+                            <PollHeader />
+                          </thead>
+                          <tbody>
+                            {mode === "new" ? (
+                              <ParticipantRowForm isNew={true} />
+                            ) : null}
+                            {visibleParticipants.length > 0
+                              ? visibleParticipants.map((participant, i) => {
+                                return (
+                                  <ParticipantRow
+                                    key={i}
+                                    participant={{
+                                      id: participant.id,
+                                      name: participant.name,
+                                      userId: participant.userId ?? undefined,
+                                      guestId: participant.guestId ?? undefined,
+                                      email: participant.email ?? undefined,
+                                      votes: participant.votes,
+                                    }}
+                                    editMode={
+                                      votingForm.watch("mode") === "edit" &&
+                                      votingForm.watch("participantId") ===
+                                      participant.id
+                                    }
+                                    className={
+                                      i === visibleParticipants.length - 1
+                                        ? "last-row"
+                                        : ""
+                                    }
+                                    onChangeEditMode={(isEditing) => {
+                                      if (isEditing) {
+                                        votingForm.setEditingParticipantId(
+                                          participant.id,
+                                        );
+                                      }
+                                    }}
+                                  />
+                                );
+                              })
+                              : null}
+                          </tbody>
+                        </table>
+                        {mode === "new" ? (
+                          <div className="sticky left-[240px] flex w-[calc(100%-240px)] items-center justify-between gap-4 border-l border-t bg-gray-50 p-3">
+                            <Button
+                              onClick={() => {
+                                votingForm.cancel();
+                              }}
+                            >
+                              <Trans i18nKey="cancel" />
+                            </Button>
+                            <p className="hidden min-w-0 truncate text-sm md:block">
+                              <Trans
+                                i18nKey="saveInstruction"
+                                values={{
+                                  action: mode === "new" ? t("continue") : t("save"),
+                                }}
+                                components={{
+                                  b: <strong className="font-semibold" />,
+                                }}
+                              />
+                            </p>
+                            <Button
+                              type="submit"
+                              variant="primary"
+                              form="voting-form"
+                            >
+                              <Trans i18nKey="continue" />
+                            </Button>
+                          </div>
+                        ) : null}
+                      </RemoveScroll>
+                    </div>
+                  ) : (
+                    <EmptyState className="p-16">
+                      <EmptyStateIcon>
+                        <Users2Icon />
+                      </EmptyStateIcon>
+                      <EmptyStateTitle>
+                        <Trans i18nKey="noParticipants" defaults="No participants" />
+                      </EmptyStateTitle>
+                      <EmptyStateDescription>
+                        <Trans
+                          i18nKey="noParticipantsDescription"
+                          components={{ b: <strong className="font-semibold" /> }}
+                          defaults="Click <b>Share</b> to invite participants"
+                        />
+                      </EmptyStateDescription>
+                    </EmptyState>
+                  )}
+                </div>
               </div>
-            ) : (
-              <EmptyState className="p-16">
-                <EmptyStateIcon>
-                  <Users2Icon />
-                </EmptyStateIcon>
-                <EmptyStateTitle>
-                  <Trans i18nKey="noParticipants" defaults="No participants" />
-                </EmptyStateTitle>
-                <EmptyStateDescription>
-                  <Trans
-                    i18nKey="noParticipantsDescription"
-                    components={{ b: <strong className="font-semibold" /> }}
-                    defaults="Click <b>Share</b> to invite participants"
-                  />
-                </EmptyStateDescription>
-              </EmptyState>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
+            </div>
+          </Card>
+        </TabsContent>
+        <TabsContent value="locations" className="h-full p-4">
+          <Card>
+            <LocationVotingForm
+              editable={mode === "new" || mode === "edit"}
+              selectedParticipantId={votingForm.watch("participantId")}
+            />
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

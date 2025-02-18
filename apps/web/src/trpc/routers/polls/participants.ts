@@ -94,6 +94,12 @@ export const participants = router({
               type: true,
             },
           },
+          locationVotes: {
+            select: {
+              locationId: true,
+              type: true,
+            },
+          },
         },
         orderBy: [
           {
@@ -136,9 +142,16 @@ export const participants = router({
             type: z.enum(["yes", "no", "ifNeedBe"]),
           })
           .array(),
+        locationVotes: z
+          .object({
+            locationId: z.string(),
+            type: z.enum(["yes", "no", "ifNeedBe"]),
+          })
+          .array()
+          .optional(),
       }),
     )
-    .mutation(async ({ ctx, input: { pollId, votes, name, email } }) => {
+    .mutation(async ({ ctx, input: { pollId, votes, locationVotes, name, email } }) => {
       const { user } = ctx;
 
       const participant = await prisma.$transaction(async (prisma) => {
@@ -174,6 +187,7 @@ export const participants = router({
           },
         });
 
+        // Create time votes
         await prisma.vote.createMany({
           data: votes.map(({ optionId, type }) => ({
             optionId,
@@ -182,6 +196,18 @@ export const participants = router({
             participantId: participant.id,
           })),
         });
+
+        // Create location votes if provided
+        if (locationVotes?.length) {
+          await prisma.locationVote.createMany({
+            data: locationVotes.map(({ locationId, type }) => ({
+              locationId,
+              type,
+              pollId,
+              participantId: participant.id,
+            })),
+          });
+        }
 
         return participant;
       });
@@ -243,11 +269,18 @@ export const participants = router({
             type: z.enum(["yes", "no", "ifNeedBe"]),
           })
           .array(),
+        locationVotes: z
+          .object({
+            locationId: z.string(),
+            type: z.enum(["yes", "no", "ifNeedBe"]),
+          })
+          .array()
+          .optional(),
       }),
     )
-    .mutation(async ({ input: { pollId, participantId, votes } }) => {
+    .mutation(async ({ input: { pollId, participantId, votes, locationVotes } }) => {
       const participant = await prisma.$transaction(async (tx) => {
-        // Delete existing votes
+        // Delete existing time votes
         await tx.vote.deleteMany({
           where: {
             participantId,
@@ -255,7 +288,7 @@ export const participants = router({
           },
         });
 
-        // Create new votes
+        // Create new time votes
         await tx.vote.createMany({
           data: votes.map(({ optionId, type }) => ({
             optionId,
@@ -265,13 +298,37 @@ export const participants = router({
           })),
         });
 
-        // Return updated participant with votes
+        // Handle location votes if provided
+        if (locationVotes !== undefined) {
+          // Delete existing location votes
+          await tx.locationVote.deleteMany({
+            where: {
+              participantId,
+              pollId,
+            },
+          });
+
+          // Create new location votes if any
+          if (locationVotes.length > 0) {
+            await tx.locationVote.createMany({
+              data: locationVotes.map(({ locationId, type }) => ({
+                locationId,
+                type,
+                pollId,
+                participantId,
+              })),
+            });
+          }
+        }
+
+        // Return updated participant with all votes
         return tx.participant.findUniqueOrThrow({
           where: {
             id: participantId,
           },
           include: {
             votes: true,
+            locationVotes: true,
           },
         });
       });

@@ -139,6 +139,7 @@ model Poll {
   hideScores              Boolean    @default(false) @map("hide_scores")
   disableComments         Boolean    @default(false) @map("disable_comments")
   requireParticipantEmail Boolean    @default(false) @map("require_participant_email")
+  locationVotes           LocationVote[]
 
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
@@ -160,9 +161,10 @@ model PollLocation {
   lng       Float?
   pollId    String   @map("poll_id")
   createdAt DateTime @default(now()) @map("created_at")
-  order     Int      @default(0)    // To maintain the order of locations as added by the user
+  order     Int      @default(0)
 
-  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  poll  Poll           @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes LocationVote[]
 
   @@index([pollId])
   @@map("poll_locations")
@@ -210,7 +212,8 @@ model Participant {
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
 
-  votes Vote[]
+  votes         Vote[]
+  locationVotes LocationVote[]
 
   poll Poll  @relation(fields: [pollId], references: [id], onDelete: Cascade)
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -287,4 +290,23 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model LocationVote {
+  id            String       @id @default(cuid())
+  participantId String       @map("participant_id")
+  locationId    String       @map("location_id")
+  pollId        String       @map("poll_id")
+  type          VoteType     @default(yes)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime?    @updatedAt @map("updated_at")
+
+  participant  Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  location    PollLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  poll        Poll         @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@index([pollId], type: Hash)
+  @@index([participantId], type: Hash)
+  @@index([locationId], type: Hash)
+  @@map("location_votes")
 }

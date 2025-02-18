@@ -35,6 +35,7 @@ type NewParticipantFormData = z.infer<typeof schema>;
 
 interface NewParticipantModalProps {
   votes: { optionId: string; type: VoteType }[];
+  locationVotes?: { locationId: string; type: VoteType }[];
   onSubmit?: (data: { id: string }) => void;
   onCancel?: () => void;
 }
@@ -44,12 +45,12 @@ const VoteSummary = ({
   className,
 }: {
   className?: string;
-  votes: { optionId: string; type: VoteType }[];
+  votes: { optionId: string; type: VoteType }[] | { locationId: string; type: VoteType }[];
 }) => {
   const { t } = useTranslation();
   const voteByType = votes.reduce<Record<VoteType, string[]>>(
     (acc, vote) => {
-      acc[vote.type] = [...acc[vote.type], vote.optionId];
+      acc[vote.type] = [...acc[vote.type], "optionId" in vote ? vote.optionId : vote.locationId];
       return acc;
     },
     { yes: [], ifNeedBe: [], no: [] },
@@ -98,88 +99,82 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
       defaultValues: {
         requireEmail: isEmailRequired,
         ...(isLoggedIn
-          ? { name: user.name, email: user.email ?? "" }
-          : {
-              name: "",
-              email: "",
-            }),
+          ? {
+            name: user.name,
+            email: user.email,
+          }
+          : {}),
       },
     });
+
   const addParticipant = useAddParticipantMutation();
 
   return (
     <form
       onSubmit={handleSubmit(async (data) => {
         try {
-          const newParticipant = await addParticipant.mutateAsync({
-            name: data.name,
-            votes: props.votes,
-            email: data.email,
+          const participant = await addParticipant.mutateAsync({
             pollId: poll.id,
+            name: data.name,
+            email: data.email,
+            votes: props.votes,
+            locationVotes: props.locationVotes,
           });
-          props.onSubmit?.(newParticipant);
-        } catch (error) {
-          if (error instanceof TRPCClientError) {
-            setError("root", {
-              message: error.message,
-            });
+
+          props.onSubmit?.(participant);
+        } catch (err) {
+          if (err instanceof TRPCClientError) {
+            if (err.data?.code === "CONFLICT") {
+              setError("email", {
+                message: t("errors.emailAlreadyExists"),
+              });
+              return;
+            }
           }
-          Sentry.captureException(error);
+
+          Sentry.captureException(err);
         }
       })}
       className="space-y-4"
     >
-      <fieldset>
-        <label htmlFor="name" className="mb-1 text-gray-500">
-          {t("name")}
-        </label>
-        <Input
-          className="w-full"
-          data-1p-ignore="true"
-          autoFocus={true}
-          error={!!formState.errors.name}
-          disabled={formState.isSubmitting}
-          placeholder={t("namePlaceholder")}
-          {...register("name")}
-        />
-        {formState.errors.name?.message ? (
-          <div className="mt-2 text-sm text-rose-500">
-            {formState.errors.name.message}
-          </div>
-        ) : null}
-      </fieldset>
-      <fieldset>
-        <label htmlFor="email" className="mb-1 text-gray-500">
-          {t("email")}
-          {!isEmailRequired ? ` (${t("optional")})` : null}
-        </label>
-        <Input
-          className="w-full"
-          error={!!formState.errors.email}
-          disabled={formState.isSubmitting}
-          placeholder={t("emailPlaceholder")}
-          {...register("email")}
-        />
-        {formState.errors.email?.message ? (
-          <div className="mt-1 text-sm text-rose-500">
-            {formState.errors.email.message}
-          </div>
-        ) : null}
-      </fieldset>
-      <fieldset>
-        <label className="mb-1 text-gray-500">{t("response")}</label>
+      <div className="space-y-4">
+        <div>
+          <Input
+            autoFocus={!isLoggedIn}
+            disabled={isLoggedIn}
+            {...register("name")}
+            placeholder={t("name")}
+          />
+          <FormMessage>{formState.errors.name?.message}</FormMessage>
+        </div>
+        <div>
+          <Input
+            disabled={isLoggedIn}
+            {...register("email")}
+            placeholder={
+              isEmailRequired
+                ? t("emailRequired")
+                : t("emailOptional")
+            }
+          />
+          <FormMessage>{formState.errors.email?.message}</FormMessage>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="text-sm text-muted-foreground">{t("yourVotes")}</div>
         <VoteSummary votes={props.votes} />
-      </fieldset>
-      {formState.errors.root?.message ? (
-        <FormMessage>{formState.errors.root.message}</FormMessage>
-      ) : null}
-      <div className="flex gap-2">
-        <Button onClick={props.onCancel}>{t("cancel")}</Button>
-        <Button
-          type="submit"
-          variant="primary"
-          loading={formState.isSubmitting}
-        >
+        {props.locationVotes && props.locationVotes.length > 0 && (
+          <>
+            <div className="text-sm text-muted-foreground">{t("yourLocationVotes")}</div>
+            <VoteSummary votes={props.locationVotes} />
+          </>
+        )}
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" onClick={props.onCancel}>
+          {t("cancel")}
+        </Button>
+        <Button type="submit" loading={addParticipant.isLoading}>
           {t("submit")}
         </Button>
       </div>

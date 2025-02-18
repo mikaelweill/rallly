@@ -8,10 +8,11 @@ import type { ParticipantForm } from "./types";
 
 export const normalizeVotes = (
   optionIds: string[],
-  votes: ParticipantForm["votes"],
+  votes: ParticipantForm["votes"] | ParticipantForm["locationVotes"],
 ) => {
-  return optionIds.map((optionId, i) => ({
-    optionId,
+  return optionIds.map((id, i) => ({
+    optionId: "optionId" in (votes?.[i] ?? {}) ? id : undefined,
+    locationId: "locationId" in (votes?.[i] ?? {}) ? id : undefined,
     type: votes[i]?.type ?? ("no" as const),
   }));
 };
@@ -34,7 +35,11 @@ export const useAddParticipantMutation = () => {
         { pollId },
         (existingParticipants = []) => {
           return [
-            { ...newParticipant, votes: input.votes },
+            {
+              ...newParticipant,
+              votes: input.votes,
+              locationVotes: input.locationVotes,
+            },
             ...existingParticipants,
           ];
         },
@@ -50,29 +55,32 @@ export const useAddParticipantMutation = () => {
 };
 
 export const useUpdateParticipantMutation = () => {
-  const queryClient = trpc.useUtils();
   const posthog = usePostHog();
+  const queryClient = trpc.useUtils();
   return trpc.polls.participants.update.useMutation({
-    onSuccess: (participant) => {
-      posthog?.capture("update participant", {
-        name: participant.name,
-      });
+    onSuccess: async (updatedParticipant, input) => {
+      const { pollId, participantId } = input;
       queryClient.polls.participants.list.setData(
-        { pollId: participant.pollId },
+        { pollId },
         (existingParticipants = []) => {
-          const newParticipants = [...existingParticipants];
-
-          const index = newParticipants.findIndex(
-            ({ id }) => id === participant.id,
-          );
-
-          if (index !== -1) {
-            newParticipants[index] = participant;
-          }
-
-          return newParticipants;
+          return existingParticipants.map((participant) => {
+            if (participant.id === participantId) {
+              return {
+                ...participant,
+                ...updatedParticipant,
+                votes: input.votes,
+                locationVotes: input.locationVotes,
+              };
+            }
+            return participant;
+          });
         },
       );
+
+      posthog?.capture("update participant", {
+        pollId,
+        participantId,
+      });
     },
   });
 };
