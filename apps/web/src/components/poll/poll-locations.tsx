@@ -1,10 +1,11 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon } from "lucide-react";
-import { useLoadScript, Autocomplete, DirectionsService } from "@react-google-maps/api";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon } from "lucide-react";
+import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription } from "@rallly/ui/alert";
 import { Input } from "@rallly/ui/input";
+import { Dialog, DialogContent } from "@rallly/ui/dialog";
 
 import { LocationMap } from "@/components/location-map";
 import TruncatedLinkify from "@/components/poll/truncated-linkify";
@@ -29,6 +30,7 @@ export function PollLocations() {
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
     const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
     const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+    const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -71,20 +73,15 @@ export function PollLocations() {
 
         const directionsService = new google.maps.DirectionsService();
         try {
-            console.log("Calculating route from", userLocation, "to", destination);
             const result = await directionsService.route({
-                origin: new google.maps.LatLng(userLocation.lat, userLocation.lng),
-                destination: new google.maps.LatLng(destination.lat, destination.lng),
+                origin: userLocation,
+                destination: { lat: destination.lat, lng: destination.lng },
                 travelMode: google.maps.TravelMode.DRIVING,
             });
-            console.log("Route result:", result);
             return result;
         } catch (error) {
             console.error("Error calculating route:", error);
-            if (error instanceof Error && error.message.includes("REQUEST_DENIED")) {
-                throw new Error("The Directions API is not enabled. Please contact the administrator.");
-            }
-            throw error;
+            return null;
         }
     }, [userLocation]);
 
@@ -133,27 +130,12 @@ export function PollLocations() {
     };
 
     const handleLocationClick = async (location: typeof poll.locations[0]) => {
-        if (!userLocation || !location.lat || !location.lng) {
-            setError("Please set a starting location first");
-            return;
-        }
+        if (!userLocation || !location.lat || !location.lng) return;
 
-        try {
-            setSelectedLocationId(location.id);
-            const route = await calculateRoute(location);
-            if (route) {
-                setDirections(route);
-                setError(null); // Clear any previous errors
-            }
-        } catch (error) {
-            console.error("Route calculation failed:", error);
-            if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError("Could not calculate route to this location");
-            }
-            // Clear any previous route when there's an error
-            setDirections(null);
+        setSelectedLocationId(location.id);
+        const route = await calculateRoute(location);
+        if (route) {
+            setDirections(route);
         }
     };
 
@@ -162,7 +144,7 @@ export function PollLocations() {
             <div className="space-y-2 p-4">
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium">Locations</h3>
-                    <div className="grid grid-cols-[1fr,auto,auto] gap-2">
+                    <div className="flex gap-2">
                         {isLoaded && (
                             <Autocomplete
                                 onLoad={setAutocomplete}
@@ -174,9 +156,6 @@ export function PollLocations() {
                                             lng: place.geometry.location.lng()
                                         });
                                         setStartAddress(place.formatted_address ?? "");
-                                        // Clear previous route when changing location
-                                        setDirections(null);
-                                        setSelectedLocationId(null);
                                     }
                                 }}
                             >
@@ -185,6 +164,7 @@ export function PollLocations() {
                                     placeholder="Enter starting location..."
                                     value={startAddress}
                                     onChange={(e) => setStartAddress(e.target.value)}
+                                    className="flex-1"
                                 />
                             </Autocomplete>
                         )}
@@ -238,16 +218,41 @@ export function PollLocations() {
                         </div>
                     ))}
                 </div>
-                <LocationMap
-                    address={poll.locations[0].address}
-                    locations={poll.locations}
-                    userLocation={userLocation}
-                    directions={directions}
-                    selectedLocationId={selectedLocationId}
-                    className="h-48 w-full"
-                    isLoaded={isLoaded}
-                />
+                <div className="relative">
+                    <LocationMap
+                        address={poll.locations[0].address}
+                        locations={poll.locations}
+                        userLocation={userLocation}
+                        directions={directions}
+                        selectedLocationId={selectedLocationId}
+                        className="h-48 w-full"
+                        isLoaded={isLoaded}
+                    />
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute bottom-2 right-2 bg-white"
+                        onClick={() => setIsMapModalOpen(true)}
+                    >
+                        <Icon>
+                            <Maximize2Icon className="h-4 w-4" />
+                        </Icon>
+                    </Button>
+                </div>
             </div>
+            <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+                <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[90vh] w-[90vw] !max-w-none !p-0 !rounded-lg shadow-2xl">
+                    <LocationMap
+                        address={poll.locations[0].address}
+                        locations={poll.locations}
+                        userLocation={userLocation}
+                        directions={directions}
+                        selectedLocationId={selectedLocationId}
+                        className="h-full w-full rounded-lg"
+                        isLoaded={isLoaded}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 } 
