@@ -19,6 +19,7 @@ interface LocationMapProps {
     userLocation?: { lat: number; lng: number };
     directions?: google.maps.DirectionsResult | null;
     selectedLocationId?: string | null;
+    onMarkerClick?: (location: Location) => void;
 }
 
 export function LocationMap({
@@ -30,15 +31,17 @@ export function LocationMap({
     isLoaded,
     userLocation,
     directions,
-    selectedLocationId
+    selectedLocationId,
+    onMarkerClick,
 }: LocationMapProps) {
     const geocoder = useMemo(() => isLoaded ? new google.maps.Geocoder() : null, [isLoaded]);
     const mapRef = useRef<google.maps.Map | null>(null);
     const [center, setCenter] = useState<google.maps.LatLngLiteral>({
-        lat: 30.2672,  // Downtown Austin coordinates
+        lat: 30.2672,
         lng: -97.7431
     });
     const [hasLocation, setHasLocation] = useState(false);
+    const [localDirections, setLocalDirections] = useState<google.maps.DirectionsResult | null>(null);
 
     const updateLocationFromLatLng = useCallback((latLng: google.maps.LatLng) => {
         if (!geocoder) return;
@@ -46,14 +49,12 @@ export function LocationMap({
         geocoder.geocode({ location: latLng }, (results, status) => {
             if (status === "OK" && results?.[0]) {
                 const result = results[0];
-                // Check if it's a business/POI by looking for point_of_interest or establishment types
                 const isPOI = result.types?.some(type =>
                     ['point_of_interest', 'establishment'].includes(type)
                 );
 
                 let locationString = result.formatted_address;
 
-                // If it's a POI, try to get the place name from the address components
                 const placeName = result.address_components?.find(
                     component => component.types.includes('point_of_interest') || component.types.includes('establishment')
                 )?.long_name;
@@ -73,7 +74,6 @@ export function LocationMap({
         const bounds = new google.maps.LatLngBounds();
         let hasValidPoints = false;
 
-        // Add all location points to bounds
         locations.forEach(location => {
             if (location.lat && location.lng) {
                 bounds.extend({ lat: location.lat, lng: location.lng });
@@ -81,7 +81,6 @@ export function LocationMap({
             }
         });
 
-        // Add user location if available
         if (userLocation) {
             bounds.extend(userLocation);
             hasValidPoints = true;
@@ -94,20 +93,44 @@ export function LocationMap({
         }
     }, [locations, userLocation, isLoaded]);
 
-    useEffect(() => {
-        if (geocoder && address) {
-            geocoder.geocode({ address }, (results, status) => {
-                if (status === "OK" && results?.[0]?.geometry?.location) {
-                    const location = results[0].geometry.location;
-                    setCenter({
-                        lat: location.lat(),
-                        lng: location.lng()
-                    });
-                    setHasLocation(true);
-                }
-            });
+    const calculateRoute = useCallback(async (location: Location) => {
+        if (!userLocation || !location.lat || !location.lng || !isLoaded) {
+            console.log('Cannot calculate route:', { userLocation, location, isLoaded });
+            return;
         }
-    }, [geocoder, address]);
+
+        const directionsService = new google.maps.DirectionsService();
+        try {
+            console.log('Calculating route from', userLocation, 'to', location);
+            const result = await directionsService.route({
+                origin: new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                destination: new google.maps.LatLng(location.lat, location.lng),
+                travelMode: google.maps.TravelMode.DRIVING,
+            });
+            console.log('Route result:', result);
+            setLocalDirections(result);
+        } catch (error) {
+            console.error("Error calculating route:", error);
+        }
+    }, [userLocation, isLoaded]);
+
+    const handleMarkerClick = useCallback((location: Location) => {
+        console.log('Marker clicked:', location);
+        if (onMarkerClick) {
+            onMarkerClick(location);
+        } else if (userLocation) {
+            calculateRoute(location);
+        }
+    }, [onMarkerClick, userLocation, calculateRoute]);
+
+    useEffect(() => {
+        if (geocoder && address && locations.length > 0) {
+            const firstLocation = locations[0];
+            if (firstLocation.lat && firstLocation.lng) {
+                setCenter({ lat: firstLocation.lat, lng: firstLocation.lng });
+            }
+        }
+    }, [geocoder, address, locations]);
 
     useEffect(() => {
         fitBoundsToLocations();
@@ -117,9 +140,9 @@ export function LocationMap({
         disableDefaultUI: true,
         zoomControl: true,
         clickableIcons: false,
-        minZoom: 1, // Allow maximum zoom out
+        minZoom: 1,
         maxZoom: 18,
-        gestureHandling: 'greedy', // Makes it easier to move the map
+        gestureHandling: 'greedy',
     }), []);
 
     if (!isLoaded) {
@@ -146,25 +169,20 @@ export function LocationMap({
                     fitBoundsToLocations();
                 }}
             >
-                {hasLocation && (
-                    <Marker
-                        position={center}
-                        draggable={interactive}
-                        onDragEnd={interactive ? (e) => {
-                            if (e.latLng) {
-                                setCenter({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-                                updateLocationFromLatLng(e.latLng);
-                            }
-                        } : undefined}
-                    />
-                )}
                 {locations.map((location, index) => (
                     location.lat && location.lng ? (
                         <Marker
                             key={location.id}
                             position={{ lat: location.lat, lng: location.lng }}
-                            label={(index + 1).toString()}
+                            label={{
+                                text: `${index + 1}`,
+                                color: 'white',
+                                fontFamily: 'system-ui',
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            }}
                             animation={selectedLocationId === location.id ? google.maps.Animation.BOUNCE : undefined}
+                            onClick={() => handleMarkerClick(location)}
                         />
                     ) : null
                 ))}
@@ -181,9 +199,9 @@ export function LocationMap({
                         }}
                     />
                 )}
-                {directions && (
+                {(directions || localDirections) && (
                     <DirectionsRenderer
-                        directions={directions}
+                        directions={directions || localDirections}
                         options={{
                             suppressMarkers: true,
                             polylineOptions: {

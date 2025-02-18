@@ -130,7 +130,10 @@ export function PollLocations() {
     };
 
     const handleLocationClick = async (location: typeof poll.locations[0]) => {
-        if (!userLocation || !location.lat || !location.lng) return;
+        if (!userLocation || !location.lat || !location.lng) {
+            setError("Please set a starting location first");
+            return;
+        }
 
         setSelectedLocationId(location.id);
         const route = await calculateRoute(location);
@@ -227,6 +230,7 @@ export function PollLocations() {
                         selectedLocationId={selectedLocationId}
                         className="h-48 w-full"
                         isLoaded={isLoaded}
+                        onMarkerClick={handleLocationClick}
                     />
                     <Button
                         size="sm"
@@ -250,6 +254,7 @@ export function PollLocations() {
                         selectedLocationId={selectedLocationId}
                         className="h-full w-full rounded-lg"
                         isLoaded={isLoaded}
+                        onMarkerClick={handleLocationClick}
                     />
                 </DialogContent>
             </Dialog>
