@@ -15,6 +15,7 @@ interface LocationMapProps {
     interactive?: boolean;
     onLocationChange?: (address: string, latLng: { lat: number; lng: number }) => void;
     isLoaded: boolean;
+    userLocation?: { lat: number; lng: number };
 }
 
 export function LocationMap({
@@ -23,7 +24,8 @@ export function LocationMap({
     className,
     interactive = false,
     onLocationChange,
-    isLoaded
+    isLoaded,
+    userLocation
 }: LocationMapProps) {
     const geocoder = useMemo(() => isLoaded ? new google.maps.Geocoder() : null, [isLoaded]);
     const mapRef = useRef<google.maps.Map | null>(null);
@@ -203,6 +205,19 @@ export function LocationMap({
                         />
                     ) : null
                 ))}
+                {userLocation && (
+                    <Marker
+                        position={userLocation}
+                        icon={{
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: "#4F46E5",
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 2,
+                        }}
+                    />
+                )}
             </GoogleMap>
         </div>
     );
