@@ -1,6 +1,6 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus } from "lucide-react";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription } from "@rallly/ui/alert";
@@ -272,9 +272,30 @@ export function PollLocations() {
                                 <TruncatedLinkify>{`${index + 1}. ${location.address}`}</TruncatedLinkify>
                             </p>
                             {distances[location.id] && (
-                                <div className="text-sm text-muted-foreground">
-                                    <span className="mr-2">{distances[location.id].distance}</span>
-                                    <span>({distances[location.id].duration})</span>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-sm text-muted-foreground">
+                                        <span className="mr-2">{distances[location.id].distance}</span>
+                                        <span>({distances[location.id].duration})</span>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 px-2"
+                                        title="Open in Google Maps"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const baseUrl = "https://www.google.com/maps/dir/?api=1";
+                                            const origin = encodeURIComponent(startAddress);
+                                            const destination = encodeURIComponent(location.address);
+                                            const mode = transportMode.toLowerCase();
+                                            const url = `${baseUrl}&origin=${origin}&destination=${destination}&travelmode=${mode}`;
+                                            window.open(url, '_blank');
+                                        }}
+                                    >
+                                        <Icon>
+                                            <Map className="h-4 w-4" />
+                                        </Icon>
+                                    </Button>
                                 </div>
                             )}
                         </div>
