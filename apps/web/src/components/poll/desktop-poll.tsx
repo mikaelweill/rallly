@@ -90,6 +90,41 @@ const useIsOverflowing = <E extends Element | null>(
   return isOverflowing;
 };
 
+const SaveBar = ({ mode }: { mode: "new" | "edit" | "view" }) => {
+  const { t } = useTranslation();
+  const votingForm = useVotingForm();
+
+  if (mode !== "new" && mode !== "edit") {
+    return null;
+  }
+
+  return (
+    <div className="sticky left-[240px] flex w-[calc(100%-240px)] items-center justify-between gap-4 border-l border-t bg-gray-50 p-3">
+      <Button
+        onClick={() => {
+          votingForm.cancel();
+        }}
+      >
+        <Trans i18nKey="cancel" />
+      </Button>
+      <p className="hidden min-w-0 truncate text-sm md:block">
+        <Trans
+          i18nKey="saveInstruction"
+          values={{
+            action: mode === "new" ? t("continue") : t("save"),
+          }}
+          components={{
+            b: <strong className="font-semibold" />,
+          }}
+        />
+      </p>
+      <Button type="submit" variant="primary" form="voting-form">
+        <Trans i18nKey={mode === "new" ? "continue" : "save"} />
+      </Button>
+    </div>
+  );
+};
+
 const DesktopPoll: React.FunctionComponent = () => {
   const poll = usePoll();
 
@@ -367,6 +402,7 @@ const DesktopPoll: React.FunctionComponent = () => {
                           )}
                         </tbody>
                       </table>
+                      <SaveBar mode={mode} />
                     </RemoveScroll>
                   </div>
                 </div>
@@ -380,6 +416,7 @@ const DesktopPoll: React.FunctionComponent = () => {
               editable={mode === "new" || mode === "edit"}
               selectedParticipantId={votingForm.watch("participantId")}
             />
+            <SaveBar mode={mode} />
           </Card>
         </TabsContent>
       </Tabs>
