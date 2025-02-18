@@ -482,6 +482,7 @@ export const polls = router({
               start: true,
               duration: true,
               optionId: true,
+              locationId: true,
             },
           },
           watchers: {
