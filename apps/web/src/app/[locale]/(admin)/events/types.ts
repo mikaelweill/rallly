@@ -5,4 +5,5 @@ export type ScheduledEvent = {
   duration: number;
   timeZone: string | null;
   participants: { name: string }[];
+  location?: string;
 };

@@ -25,6 +25,13 @@ export const scheduledEvents = router({
           title: true,
           start: true,
           duration: true,
+          locationId: true,
+          location: {
+            select: {
+              id: true,
+              address: true,
+            },
+          },
           poll: {
             select: {
               timeZone: true,
@@ -54,10 +61,11 @@ export const scheduledEvents = router({
         ],
       });
 
-      return events.map(({ poll, ...event }) => ({
+      return events.map(({ poll, location, ...event }) => ({
         ...event,
         timeZone: poll?.timeZone || null,
         participants: poll?.participants ?? [],
+        location: location?.address,
       }));
     }),
 });

@@ -48,6 +48,14 @@ type OptionScore = {
   no: string[];
 };
 
+type ParticipantWithLocationVotes = {
+  id: string;
+  locationVotes?: Array<{
+    locationId: string;
+    type?: "yes" | "no" | "ifNeedBe";
+  }>;
+};
+
 const useScoreByOptionId = () => {
   const { participants: responses } = useParticipants();
   const { options } = usePoll();
@@ -86,10 +94,10 @@ const useLocationScoreById = () => {
       };
     });
 
-    responses?.forEach((response) => {
+    (responses as ParticipantWithLocationVotes[]).forEach((response) => {
       response.locationVotes?.forEach((vote) => {
-        if (vote.type) {
-          scoreByLocationId[vote.locationId]?.[vote.type].push(response.id);
+        if (vote.type && vote.locationId in scoreByLocationId) {
+          scoreByLocationId[vote.locationId][vote.type].push(response.id);
         }
       });
     });
@@ -293,6 +301,70 @@ export const FinalizePollForm = ({
             }}
           />
         )}
+
+        <FormField
+          control={form.control}
+          name="notify"
+          render={({ field }) => {
+            return (
+              <FormItem className="relative">
+                <FormLabel htmlFor={field.name}>
+                  <Trans i18nKey="notify" defaults="Notify" />
+                </FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="grid max-h-96 gap-2 overflow-y-auto rounded-lg border bg-gray-100 p-2"
+                  >
+                    <label
+                      htmlFor="notify-none"
+                      className={cn(
+                        "group flex select-none items-start gap-4 rounded-lg border bg-white p-3 text-base",
+                        field.value === "none" ? "" : "",
+                      )}
+                    >
+                      <RadioGroupItem id="notify-none" value="none" />
+                      <div className="grow">
+                        <div className="text-sm font-medium">
+                          <Trans i18nKey="notifyNone" defaults="None" />
+                        </div>
+                      </div>
+                    </label>
+                    <label
+                      htmlFor="notify-all"
+                      className={cn(
+                        "group flex select-none items-start gap-4 rounded-lg border bg-white p-3 text-base",
+                        field.value === "all" ? "" : "",
+                      )}
+                    >
+                      <RadioGroupItem id="notify-all" value="all" />
+                      <div className="grow">
+                        <div className="text-sm font-medium">
+                          <Trans i18nKey="notifyAll" defaults="All" />
+                        </div>
+                      </div>
+                    </label>
+                    <label
+                      htmlFor="notify-attendees"
+                      className={cn(
+                        "group flex select-none items-start gap-4 rounded-lg border bg-white p-3 text-base",
+                        field.value === "attendees" ? "" : "",
+                      )}
+                    >
+                      <RadioGroupItem id="notify-attendees" value="attendees" />
+                      <div className="grow">
+                        <div className="text-sm font-medium">
+                          <Trans i18nKey="notifyAttendees" defaults="Attendees" />
+                        </div>
+                      </div>
+                    </label>
+                  </RadioGroup>
+                </FormControl>
+              </FormItem>
+            );
+          }}
+        />
       </form>
     </Form>
   );

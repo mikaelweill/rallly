@@ -3,6 +3,8 @@
 import { Card, CardContent } from "@rallly/ui/card";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import dayjs from "dayjs";
+import { MapPinIcon } from "lucide-react";
+import { Icon } from "@rallly/ui/icon";
 
 import type { ScheduledEvent } from "@/app/[locale]/(admin)/events/types";
 import { Trans } from "@/components/trans";
@@ -67,6 +69,14 @@ export function EventList({ data }: { data: ScheduledEvent[] }) {
                         <span>{`${start.format("LT")} - ${end.format("LT")}`}</span>
                       )}
                     </p>
+                    {row.original.location && (
+                      <p className="text-muted-foreground mt-1 flex items-center gap-x-1 text-sm">
+                        <Icon>
+                          <MapPinIcon className="size-4" />
+                        </Icon>
+                        {row.original.location}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>

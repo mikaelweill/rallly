@@ -1,6 +1,7 @@
 "use client";
 
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, MapPinIcon } from "lucide-react";
+import { Icon } from "@rallly/ui/icon";
 
 import { AddToCalendarButton } from "@/components/add-to-calendar-button";
 import { ParticipantAvatarBar } from "@/components/participant-avatar-bar";
@@ -66,15 +67,26 @@ function Attendees() {
   return <ParticipantAvatarBar participants={attendees} max={5} />;
 }
 
+type Event = {
+  start: Date;
+  optionId: string;
+  locationId?: string;
+  duration: number;
+};
+
 export function ScheduledEvent() {
   const poll = usePoll();
-  const { event } = poll;
+  const { event } = poll as { event?: Event };
 
   const attendees = useAttendees();
 
   if (!event) {
     return null;
   }
+
+  const selectedLocation = poll.locations?.find(
+    (location) => location.id === event.locationId
+  );
 
   return (
     <>
@@ -98,6 +110,14 @@ export function ScheduledEvent() {
                 <div className="text-sm opacity-75">
                   <FinalTime start={event.start} duration={event.duration} />
                 </div>
+                {selectedLocation && (
+                  <div className="text-sm opacity-75">
+                    <Icon>
+                      <MapPinIcon className="-mt-0.5 mr-1.5 inline-block size-4" />
+                    </Icon>
+                    {selectedLocation.address}
+                  </div>
+                )}
               </div>
             </div>
           </div>
