@@ -94,7 +94,7 @@ export function ScheduledEvent() {
         <div className="flex h-9 items-center gap-x-2 rounded-md bg-gray-100 px-2">
           <CalendarIcon className="size-4" />
           <h2 className="text-sm font-medium">
-            <Trans i18nKey="schedulateDate" defaults="Scheduled Date" />
+            <Trans i18nKey="scheduledDateAndLocation" defaults="Scheduled Date & Location" />
           </h2>
         </div>
         <div className="flex flex-col justify-between gap-4 p-4 sm:flex-row sm:items-center">
