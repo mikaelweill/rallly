@@ -42,6 +42,7 @@ export function LocationMap({
     });
     const [hasLocation, setHasLocation] = useState(false);
     const [localDirections, setLocalDirections] = useState<google.maps.DirectionsResult | null>(null);
+    const [animatingMarkers, setAnimatingMarkers] = useState<Set<string>>(new Set());
 
     const updateLocationFromLatLng = useCallback((latLng: google.maps.LatLng) => {
         if (!geocoder) return;
@@ -117,6 +118,10 @@ export function LocationMap({
     const handleMarkerClick = useCallback((location: Location) => {
         console.log('Marker clicked:', location);
         if (onMarkerClick) {
+            setAnimatingMarkers(new Set([location.id]));
+            setTimeout(() => {
+                setAnimatingMarkers(new Set());
+            }, 1500);
             onMarkerClick(location);
         } else if (userLocation) {
             calculateRoute(location);
@@ -181,7 +186,7 @@ export function LocationMap({
                                 fontSize: '14px',
                                 fontWeight: 'bold'
                             }}
-                            animation={selectedLocationId === location.id ? google.maps.Animation.BOUNCE : undefined}
+                            animation={animatingMarkers.has(location.id) ? google.maps.Animation.BOUNCE : undefined}
                             onClick={() => handleMarkerClick(location)}
                         />
                     ) : null
