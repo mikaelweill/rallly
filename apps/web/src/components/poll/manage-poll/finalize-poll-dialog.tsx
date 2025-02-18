@@ -19,6 +19,7 @@ import {
 } from "@rallly/ui/form";
 import { RadioGroup, RadioGroupItem } from "@rallly/ui/radio-group";
 import dayjs from "dayjs";
+import { MapPinIcon } from "lucide-react";
 import { Trans } from "next-i18next";
 import React from "react";
 import { useForm } from "react-hook-form";
@@ -27,6 +28,7 @@ import { z } from "zod";
 import { DateIconInner } from "@/components/date-icon";
 import { useParticipants } from "@/components/participants-provider";
 import { ConnectedScoreSummary } from "@/components/poll/score-summary";
+import { LocationScoreSummary } from "@/components/poll/location-score-summary";
 import { VoteSummaryProgressBar } from "@/components/vote-summary-progress-bar";
 import { usePoll } from "@/contexts/poll";
 import { trpc } from "@/trpc/client";
@@ -34,6 +36,7 @@ import { useDayjs } from "@/utils/dayjs";
 
 const formSchema = z.object({
   selectedOptionId: z.string(),
+  selectedLocationId: z.string().optional(),
   notify: z.enum(["none", "all", "attendees"]),
 });
 
@@ -69,6 +72,32 @@ const useScoreByOptionId = () => {
   }, [responses, options]);
 };
 
+const useLocationScoreById = () => {
+  const { participants: responses } = useParticipants();
+  const { locations } = usePoll();
+
+  return React.useMemo(() => {
+    const scoreByLocationId: Record<string, OptionScore> = {};
+    locations?.forEach((location) => {
+      scoreByLocationId[location.id] = {
+        yes: [],
+        ifNeedBe: [],
+        no: [],
+      };
+    });
+
+    responses?.forEach((response) => {
+      response.locationVotes?.forEach((vote) => {
+        if (vote.type) {
+          scoreByLocationId[vote.locationId]?.[vote.type].push(response.id);
+        }
+      });
+    });
+
+    return scoreByLocationId;
+  }, [responses, locations]);
+};
+
 function DateIcon({ start }: { start: Date }) {
   const poll = usePoll();
   const { adjustTimeZone } = useDayjs();
@@ -87,6 +116,7 @@ export const FinalizePollForm = ({
 
   const { adjustTimeZone } = useDayjs();
   const scoreByOptionId = useScoreByOptionId();
+  const scoreByLocationId = useLocationScoreById();
   const { participants } = useParticipants();
 
   const options = [...poll.options]
@@ -116,6 +146,7 @@ export const FinalizePollForm = ({
   const form = useForm<FinalizeFormData>({
     defaultValues: {
       selectedOptionId: options[0].id,
+      selectedLocationId: poll.locations?.[0]?.id,
       notify: "all",
     },
   });
@@ -205,6 +236,63 @@ export const FinalizePollForm = ({
             );
           }}
         />
+
+        {poll.locations && poll.locations.length > 0 && (
+          <FormField
+            control={form.control}
+            name="selectedLocationId"
+            render={({ field }) => {
+              return (
+                <FormItem className="relative">
+                  <FormLabel htmlFor={field.name}>
+                    <Trans i18nKey="location" defaults="Location" />
+                  </FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="grid max-h-96 gap-2 overflow-y-auto rounded-lg border bg-gray-100 p-2"
+                    >
+                      {poll.locations.map((location, index) => {
+                        return (
+                          <label
+                            key={location.id}
+                            htmlFor={location.id}
+                            className={cn(
+                              "group flex select-none items-start gap-4 rounded-lg border bg-white p-3 text-base",
+                              field.value === location.id ? "" : "",
+                            )}
+                          >
+                            <RadioGroupItem id={location.id} value={location.id} />
+                            <div className="grow">
+                              <div className="flex gap-x-4">
+                                <MapPinIcon className="size-4 text-gray-500" />
+                                <div className="grow whitespace-nowrap">
+                                  <div className="text-sm font-medium">
+                                    {`${index + 1}. ${location.address}`}
+                                  </div>
+                                </div>
+                                <div>
+                                  <LocationScoreSummary locationId={location.id} />
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <VoteSummaryProgressBar
+                                  {...scoreByLocationId[location.id]}
+                                  total={participants.length}
+                                />
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </RadioGroup>
+                  </FormControl>
+                </FormItem>
+              );
+            }}
+          />
+        )}
       </form>
     </Form>
   );
@@ -223,7 +311,7 @@ export function FinalizePollDialog(props: DialogProps) {
           <DialogDescription>
             <Trans
               i18nKey="finalizeDescription"
-              defaults="Select a final date for your event."
+              defaults="Select a final date and location for your event."
             />
           </DialogDescription>
         </DialogHeader>
@@ -233,6 +321,7 @@ export function FinalizePollDialog(props: DialogProps) {
             scheduleEvent.mutate({
               pollId: poll.id,
               optionId: data.selectedOptionId,
+              locationId: data.selectedLocationId,
               notify: data.notify,
             });
             props.onOpenChange?.(false);

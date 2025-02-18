@@ -517,6 +517,7 @@ export const polls = router({
       z.object({
         pollId: z.string(),
         optionId: z.string(),
+        locationId: z.string().optional(),
         notify: z.enum(["none", "all", "attendees"]),
       }),
     )
@@ -612,6 +613,7 @@ export const polls = router({
           event: {
             create: {
               optionId: input.optionId,
+              locationId: input.locationId,
               start: eventStart.toDate(),
               duration: option.duration,
               title: poll.title,

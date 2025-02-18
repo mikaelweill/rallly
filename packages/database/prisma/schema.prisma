@@ -163,8 +163,9 @@ model PollLocation {
   createdAt DateTime @default(now()) @map("created_at")
   order     Int      @default(0)
 
-  poll  Poll           @relation(fields: [pollId], references: [id], onDelete: Cascade)
-  votes LocationVote[]
+  poll   Poll           @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  LocationVote[]
+  events Event[]
 
   @@index([pollId])
   @@map("poll_locations")
@@ -175,12 +176,14 @@ model Event {
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   optionId  String   @map("option_id")
+  locationId String? @map("location_id")
   title     String
   start     DateTime @db.Timestamp(0)
   duration  Int      @default(0) @map("duration_minutes")
   createdAt DateTime @default(now()) @map("created_at")
 
-  poll Poll?
+  poll     Poll?
+  location PollLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   @@index([userId], type: Hash)
   @@map("events")

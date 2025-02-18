@@ -33,31 +33,32 @@ export const ConnectedScoreSummary: React.FunctionComponent<{
   );
 };
 
-function AnimatedNumber({ score }: { score: number }) {
+export const AnimatedNumber = ({ score }: { score: number }) => {
   const prevScore = usePrevious(score);
-  const direction = prevScore !== undefined ? score - prevScore : 0;
-
   return (
-    <AnimatePresence initial={false} mode="wait">
+    <AnimatePresence mode="wait">
       <m.span
-        initial={{
-          y: 10 * direction,
-        }}
-        transition={{
-          duration: 0.1,
-        }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{
-          y: 10 * direction,
-        }}
         key={score}
-        className="relative"
+        initial={
+          prevScore !== undefined
+            ? {
+              y: score > prevScore ? 10 : -10,
+              opacity: 0,
+            }
+            : undefined
+        }
+        animate={{ y: 0, opacity: 1 }}
+        exit={{
+          y: score > (prevScore ?? 0) ? -10 : 10,
+          opacity: 0,
+          position: "absolute",
+        }}
       >
         {score}
       </m.span>
     </AnimatePresence>
   );
-}
+};
 
 const ScoreSummary: React.FunctionComponent<PopularityScoreProps> = React.memo(
   function PopularityScore({
