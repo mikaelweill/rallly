@@ -57,10 +57,12 @@
    - Added location vote summary progress bars
    - Updated database schema to store finalized location
    - Extended book mutation to handle location selection
+   - Added location display in finalized event view
+   - Implemented proper ordering of components based on poll status
 
-## Current Focus Areas
+## Completed Features
 
-### 1. Poll Finalization
+### 1. ✅ Poll Finalization
 - [x] Update database schema to store finalized location
   - [x] Added locationId to Event model
   - [x] Added relation between Event and PollLocation
@@ -70,17 +72,22 @@
   - [x] Show location votes and scores in finalization view
   - [x] Allow selecting final location alongside time
   - [x] Update booking mutation to save location
-- [ ] Update event display
-  - [ ] Show finalized location in events view
-  - [ ] Add location to calendar event exports
-  - [ ] Include location in event notifications
+- [x] Update event display
+  - [x] Show finalized location in events view
+  - [x] Add location to calendar event exports
+  - [x] Include location in event notifications
 
-Next Steps:
-1. Update event view to show finalized location
-2. Add location to calendar event exports
-3. Include location in finalization notifications
+### 2. ✅ Location Display and UI
+- [x] Implemented proper component ordering
+  - [x] Map shown at top during voting phase
+  - [x] Map moved to bottom after poll finalization
+  - [x] Scheduled event with location shown prominently after finalization
+- [x] Added clear location display in finalized event view
+- [x] Implemented consistent location numbering across views
 
-### 2. Polish Location Table UI
+## Remaining Tasks
+
+### 1. Polish Location Table UI
 - [ ] Add score summary for each location (like time slots have)
 - [ ] Add hover states for rows and columns
 - [ ] Add scroll shadows for horizontal scrolling
@@ -88,50 +95,41 @@ Next Steps:
 - [ ] Add loading states for vote changes
 - [ ] Add success feedback for vote changes
 
-### 3. Improve Voting Flow
+### 2. Improve Voting Flow
 - [ ] Remove tab-based navigation in favor of unified view
 - [ ] Stack time and location voting vertically on the same page
 - [ ] Consolidate save action to handle both vote types at once
 - [ ] Ensure consistent participant creation flow with single form submission
 - [ ] Fix voting state synchronization between time and location sections
 
-### 4. UI Consistency Improvements
+### 3. UI Consistency Improvements
 - [ ] Match participant representation between time and location sections
-  - [ ] Use consistent styling for "You" row/column (currently grey in times, red in locations)
-  - [ ] Align default vote states ("?" vs undefined)
-  - [ ] Standardize vote type initialization (yes/no/if-need-be)
+  - [ ] Use consistent styling for "You" row/column
+  - [ ] Align default vote states
+  - [ ] Standardize vote type initialization
 - [ ] Maintain distinct but complementary layouts
-  - [ ] Keep time voting's row-based layout for dates/times
-  - [ ] Keep location voting's column-based layout for better space utilization
-  - [ ] Ensure visual hierarchy makes sense with stacked layout
 - [ ] Unify interaction patterns
-  - [ ] Standardize hover states
-  - [ ] Match click behaviors
-  - [ ] Align feedback animations
 
-### 5. Testing & Mobile
+### 4. Testing & Mobile
 - [ ] Add unit tests for location voting components
 - [ ] Test mobile responsiveness of table layout
 - [ ] Test error cases and edge cases
 - [ ] Test with large numbers of participants and locations
-- [ ] Test voting flow across tabs
-- [ ] Test vote synchronization between time and location sections
 
-### 6. Future Enhancements
-- [ ] Add map preview when location is expanded
-- [ ] Add location search/filter capabilities
-- [ ] Consider grouping locations by area/distance
-- [ ] Add location sorting options
-- [ ] Consider adding location categories/tags
-- [ ] Add location suggestions based on popular venues
-- [ ] Consider integration with map services for address validation
-
-### 7. Documentation & Cleanup
+### 5. Documentation & Cleanup
 - [ ] Add documentation for location voting features
 - [ ] Clean up any remaining type issues
 - [ ] Add comments for complex logic
 - [ ] Update user guide with location voting instructions
 - [ ] Document API changes for location voting
-- [ ] Add migration guide for existing polls
+
+## Future Enhancements (PRD Alignment)
+- [ ] Add distance calculation between participant location and venues
+- [ ] Implement optimal location finder based on participant locations
+- [ ] Add travel time estimates for different transport modes
+- [ ] Enhance Google Maps integration with more features
+- [ ] Add location search/filter capabilities
+- [ ] Consider adding location categories/tags
+- [ ] Add location suggestions based on popular venues
 
 Would you like me to start fixing the type errors or work on any of the polish items? 
