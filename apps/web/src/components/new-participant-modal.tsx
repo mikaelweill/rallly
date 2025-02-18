@@ -10,6 +10,9 @@ import clsx from "clsx";
 import { useTranslation } from "next-i18next";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { Icon } from "@rallly/ui/icon";
+import { MapPinIcon, Users2Icon } from "lucide-react";
+import { Trans } from "react-i18next";
 
 import { usePoll } from "@/contexts/poll";
 import { useDayjs } from "@/utils/dayjs";
@@ -19,18 +22,19 @@ import VoteIcon from "./poll/vote-icon";
 import { useUser } from "./user-provider";
 
 const requiredEmailSchema = z.object({
-  requireEmail: z.literal(true),
   name: z.string().min(1).max(100),
   email: z.string().email(),
 });
 
 const optionalEmailSchema = z.object({
-  requireEmail: z.literal(false),
   name: z.string().min(1).max(100),
   email: z.string().email().or(z.literal("")),
 });
 
-const schema = z.union([requiredEmailSchema, optionalEmailSchema]);
+const schema = z.discriminatedUnion("requireEmail", [
+  z.object({ requireEmail: z.literal(true) }).merge(requiredEmailSchema),
+  z.object({ requireEmail: z.literal(false) }).merge(optionalEmailSchema),
+]);
 
 type NewParticipantFormData = z.infer<typeof schema>;
 
@@ -46,7 +50,7 @@ const VoteSummary = ({
   className,
 }: {
   className?: string;
-  votes: { optionId: string; type: VoteType }[] | { locationId: string; type: VoteType }[];
+  votes: { optionId?: string; locationId?: string; type: VoteType }[];
 }) => {
   const { t } = useTranslation();
   const poll = usePoll();
@@ -57,7 +61,9 @@ const VoteSummary = ({
       if (!vote.type) {
         return acc;
       }
-      acc[vote.type] = acc[vote.type] ? [...acc[vote.type], "optionId" in vote ? vote.optionId : vote.locationId] : ["optionId" in vote ? vote.optionId : vote.locationId];
+      const id = vote.optionId || vote.locationId;
+      if (!id) return acc;
+      acc[vote.type] = [...(acc[vote.type] || []), id];
       return acc;
     },
     { yes: [], ifNeedBe: [], no: [] },
@@ -65,7 +71,8 @@ const VoteSummary = ({
 
   const renderVoteDetails = (voteType: VoteType, voteIds: string[]) => {
     const items = voteIds.map((id) => {
-      if ("optionId" in votes[0]) {
+      const isTimeVote = votes[0]?.optionId !== undefined;
+      if (isTimeVote) {
         // Time votes
         const option = poll.options.find((opt) => opt.id === id);
         if (!option) return null;
@@ -91,9 +98,13 @@ const VoteSummary = ({
         // Location votes
         const location = poll.locations?.find((loc) => loc.id === id);
         if (!location) return null;
+        const locationIndex = poll.locations?.findIndex((loc) => loc.id === id) ?? 0;
         return (
           <div key={id} className="text-sm text-muted-foreground">
-            {location.address}
+            <div className="flex items-center gap-2">
+              <MapPinIcon className="h-4 w-4 text-gray-500" />
+              <span>{`${locationIndex + 1}. ${location.address}`}</span>
+            </div>
           </div>
         );
       }
@@ -142,7 +153,7 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
         ...(isLoggedIn
           ? {
             name: user.name,
-            email: user.email,
+            email: user.email || undefined,
           }
           : {}),
       },
@@ -167,7 +178,7 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
           if (err instanceof TRPCClientError) {
             if (err.data?.code === "CONFLICT") {
               setError("email", {
-                message: t("errors.emailAlreadyExists"),
+                message: t("userAlreadyExists"),
               });
               return;
             }
@@ -194,19 +205,29 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
             {...register("email")}
             placeholder={
               isEmailRequired
-                ? t("emailRequired")
-                : t("emailOptional")
+                ? t("email")
+                : t("optional")
             }
           />
           <FormMessage>{formState.errors.email?.message}</FormMessage>
         </div>
       </div>
       <div className="space-y-2">
-        <div className="text-sm text-muted-foreground">{t("yourVotes")}</div>
+        <div className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Icon><Users2Icon className="h-4 w-4" /></Icon>
+            <Trans i18nKey="dates" />
+          </div>
+        </div>
         <VoteSummary votes={props.votes} />
         {props.locationVotes && props.locationVotes.length > 0 && (
           <>
-            <div className="text-sm text-muted-foreground">{t("yourLocationVotes")}</div>
+            <div className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Icon><MapPinIcon className="h-4 w-4" /></Icon>
+                <Trans i18nKey="location" />
+              </div>
+            </div>
             <VoteSummary votes={props.locationVotes} />
           </>
         )}
