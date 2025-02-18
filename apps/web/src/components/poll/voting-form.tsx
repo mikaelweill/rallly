@@ -13,6 +13,7 @@ import { NewParticipantForm } from "@/components/new-participant-modal";
 import { useParticipants } from "@/components/participants-provider";
 import {
   normalizeVotes,
+  normalizeVotesForDisplay,
   useUpdateParticipantMutation,
 } from "@/components/poll/mutations";
 import { Trans } from "@/components/trans";
@@ -178,8 +179,8 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
             </DialogDescription>
           </DialogHeader>
           <NewParticipantForm
-            votes={normalizeVotes(optionIds, form.watch("votes"))}
-            locationVotes={normalizeVotes(locationIds, form.watch("locationVotes"))}
+            votes={normalizeVotesForDisplay(optionIds, form.watch("votes"))}
+            locationVotes={normalizeVotesForDisplay(locationIds, form.watch("locationVotes"))}
             onSubmit={(newParticipant) => {
               form.reset({
                 mode: "view",

@@ -6,15 +6,32 @@ import { trpc } from "@/trpc/client";
 
 import type { ParticipantForm } from "./types";
 
+export const normalizeVotesForDisplay = (
+  optionIds: string[],
+  votes: ParticipantForm["votes"] | ParticipantForm["locationVotes"],
+) => {
+  return optionIds.map((id, i) => {
+    const vote = votes?.[i];
+    return {
+      optionId: "optionId" in (vote ?? {}) ? id : undefined,
+      locationId: "locationId" in (vote ?? {}) ? id : undefined,
+      type: vote?.type,
+    };
+  });
+};
+
 export const normalizeVotes = (
   optionIds: string[],
   votes: ParticipantForm["votes"] | ParticipantForm["locationVotes"],
 ) => {
-  return optionIds.map((id, i) => ({
-    optionId: "optionId" in (votes?.[i] ?? {}) ? id : undefined,
-    locationId: "locationId" in (votes?.[i] ?? {}) ? id : undefined,
-    type: votes[i]?.type ?? ("no" as const),
-  }));
+  return optionIds.map((id, i) => {
+    const vote = votes?.[i];
+    return {
+      optionId: "optionId" in (vote ?? {}) ? id : undefined,
+      locationId: "locationId" in (vote ?? {}) ? id : undefined,
+      type: vote?.type ?? ("no" as const),
+    };
+  });
 };
 
 export const useAddParticipantMutation = () => {

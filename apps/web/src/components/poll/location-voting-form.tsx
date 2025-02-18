@@ -10,6 +10,7 @@ import { PlusIcon } from "lucide-react";
 import { Trans } from "next-i18next";
 import { cn } from "@rallly/ui";
 import { MapPinIcon } from "lucide-react";
+import type { VoteType } from "@rallly/database";
 
 import { OptimizedAvatarImage } from "@/components/optimized-avatar-image";
 import { useVotingForm } from "@/components/poll/voting-form";
@@ -18,17 +19,19 @@ import { usePermissions } from "@/contexts/permissions";
 import { useParticipants } from "@/components/participants-provider";
 
 import LocationOption from "./location-option";
-import VoteSelector from "@/components/poll/vote-selector";
+import { VoteSelector } from "@/components/poll/vote-selector";
 import VoteIcon from "@/components/poll/vote-icon";
 
 export interface LocationVotingFormProps {
     editable?: boolean;
     selectedParticipantId?: string;
+    hideHeader?: boolean;
 }
 
 const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
     editable,
     selectedParticipantId,
+    hideHeader = false,
 }) => {
     const { control } = useVotingForm();
     const {
@@ -47,7 +50,9 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
         ? getParticipantById(selectedParticipantId)
         : undefined;
 
-    if (!poll.locations?.length) {
+    const locations = poll.locations ?? [];
+
+    if (!locations.length) {
         return (
             <div className="p-4 text-center text-sm text-gray-500">
                 No locations to vote on
@@ -57,28 +62,30 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
 
     return (
         <div>
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-0">
-                <div className="flex items-center gap-x-2.5">
-                    <CardTitle>
-                        <Trans i18nKey="participants" />
-                    </CardTitle>
-                    <Badge>{participants.length}</Badge>
-                    {canAddNewParticipant && mode !== "new" ? (
-                        <Button
-                            className="ml-2"
-                            size="sm"
-                            data-testid="add-participant-button"
-                            onClick={() => {
-                                votingForm.newParticipant();
-                            }}
-                        >
-                            <Icon>
-                                <PlusIcon />
-                            </Icon>
-                        </Button>
-                    ) : null}
-                </div>
-            </CardHeader>
+            {!hideHeader && (
+                <CardHeader className="flex-row items-center justify-between space-y-0 pb-0">
+                    <div className="flex items-center gap-x-2.5">
+                        <CardTitle>
+                            <Trans i18nKey="participants" />
+                        </CardTitle>
+                        <Badge>{participants.length}</Badge>
+                        {canAddNewParticipant && mode !== "new" ? (
+                            <Button
+                                className="ml-2"
+                                size="sm"
+                                data-testid="add-participant-button"
+                                onClick={() => {
+                                    votingForm.newParticipant();
+                                }}
+                            >
+                                <Icon>
+                                    <PlusIcon />
+                                </Icon>
+                            </Button>
+                        ) : null}
+                    </div>
+                </CardHeader>
+            )}
             <div className="relative">
                 <div className="scrollbar-thin hover:scrollbar-thumb-gray-400 scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative z-10 flex-grow overflow-auto scroll-smooth">
                     <table className="w-full table-auto border-separate border-spacing-0 bg-gray-50">
@@ -87,6 +94,16 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
                                 <th className="sticky left-0 z-30 w-[240px] bg-white pl-4 pr-4">
                                     <div className="text-sm font-medium">Locations</div>
                                 </th>
+                                {mode === "new" ? (
+                                    <th className="h-12 min-w-[80px] border-l bg-gray-50 px-2">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <OptimizedAvatarImage size="xs" name="You" />
+                                            <div className="truncate text-xs font-normal">
+                                                You
+                                            </div>
+                                        </div>
+                                    </th>
+                                ) : null}
                                 {participants.map((participant) => (
                                     <th
                                         key={participant.id}
@@ -104,7 +121,7 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {poll.locations.map((location, index) => (
+                            {locations.map((location, index) => (
                                 <Controller
                                     key={location.id}
                                     control={control}
@@ -130,6 +147,32 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
                                                         <div className="truncate">{`${index + 1}. ${location.address}`}</div>
                                                     </div>
                                                 </td>
+                                                {mode === "new" ? (
+                                                    <td
+                                                        className={cn(
+                                                            "h-12 border-l border-t",
+                                                            !vote || vote === "no" ? "bg-gray-100" : "bg-white",
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-center">
+                                                            <div
+                                                                className={cn(
+                                                                    "inline-flex h-7 w-7 items-center justify-center rounded-full",
+                                                                    {
+                                                                        "bg-green-50": vote === "yes",
+                                                                        "bg-amber-50": vote === "ifNeedBe",
+                                                                        "bg-gray-200": vote === "no",
+                                                                    },
+                                                                )}
+                                                            >
+                                                                <VoteSelector
+                                                                    value={vote}
+                                                                    onChange={handleChange}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                ) : null}
                                                 {participants.map((participant) => {
                                                     const participantVote = getVote(participant.id, location.id);
                                                     return (
@@ -157,7 +200,7 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
                                                                             onChange={handleChange}
                                                                         />
                                                                     ) : (
-                                                                        <VoteIcon type={participantVote} />
+                                                                        <VoteIcon type={mode === "new" && participant.id === "you" ? vote : participantVote} />
                                                                     )}
                                                                 </div>
                                                             </div>

@@ -54,7 +54,10 @@ const VoteSummary = ({
 
   const voteByType = votes.reduce<Record<VoteType, string[]>>(
     (acc, vote) => {
-      acc[vote.type] = [...acc[vote.type], "optionId" in vote ? vote.optionId : vote.locationId];
+      if (!vote.type) {
+        return acc;
+      }
+      acc[vote.type] = acc[vote.type] ? [...acc[vote.type], "optionId" in vote ? vote.optionId : vote.locationId] : ["optionId" in vote ? vote.optionId : vote.locationId];
       return acc;
     },
     { yes: [], ifNeedBe: [], no: [] },

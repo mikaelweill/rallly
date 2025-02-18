@@ -6,6 +6,7 @@ export type GetPollApiResponse = {
   location: string | null;
   description: string | null;
   options: { id: string; startTime: Date; duration: number }[];
+  locations?: { id: string; address: string }[];
   user: User | null;
   timeZone: string | null;
   adminUrlId: string;

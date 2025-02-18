@@ -62,19 +62,34 @@
 - [ ] Ensure consistent UX with time vote confirmation
 
 ### 3. Improve Voting Flow
-- [ ] Add "New Participant" form in locations tab
-- [ ] Ensure consistent participant creation flow between tabs
-- [ ] Fix voting state synchronization between time and location tabs
-- [ ] Add proper error handling for vote failures
+- [ ] Remove tab-based navigation in favor of unified view
+- [ ] Stack time and location voting vertically on the same page
+- [ ] Consolidate save action to handle both vote types at once
+- [ ] Ensure consistent participant creation flow with single form submission
+- [ ] Fix voting state synchronization between time and location sections
 
-### 4. Testing & Mobile
+### 4. UI Consistency Improvements
+- [ ] Match participant representation between time and location sections
+  - [ ] Use consistent styling for "You" row/column (currently grey in times, red in locations)
+  - [ ] Align default vote states ("?" vs undefined)
+  - [ ] Standardize vote type initialization (yes/no/if-need-be)
+- [ ] Maintain distinct but complementary layouts
+  - [ ] Keep time voting's row-based layout for dates/times
+  - [ ] Keep location voting's column-based layout for better space utilization
+  - [ ] Ensure visual hierarchy makes sense with stacked layout
+- [ ] Unify interaction patterns
+  - [ ] Standardize hover states
+  - [ ] Match click behaviors
+  - [ ] Align feedback animations
+
+### 5. Testing & Mobile
 - [ ] Add unit tests for location voting components
 - [ ] Test mobile responsiveness of table layout
 - [ ] Test error cases and edge cases
 - [ ] Test with large numbers of participants and locations
 - [ ] Test voting flow across tabs
 
-### 5. Future Enhancements
+### 6. Future Enhancements
 - [ ] Add map preview when location is expanded
 - [ ] Add location search/filter capabilities
 - [ ] Consider grouping locations by area/distance
