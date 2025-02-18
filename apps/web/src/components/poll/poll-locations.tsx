@@ -80,14 +80,14 @@ export function PollLocations() {
             const result = await directionsService.route({
                 origin: userLocation,
                 destination: { lat: destination.lat, lng: destination.lng },
-                travelMode: google.maps.TravelMode.DRIVING,
+                travelMode: google.maps.TravelMode[transportMode],
             });
             return result;
         } catch (error) {
             console.error("Error calculating route:", error);
             return null;
         }
-    }, [userLocation]);
+    }, [userLocation, transportMode]);
 
     const handleCalculateDistances = async () => {
         if (!startAddress) {
@@ -106,7 +106,7 @@ export function PollLocations() {
             const result = await service.getDistanceMatrix({
                 origins: [startAddress],
                 destinations: poll.locations.map(loc => loc.address),
-                travelMode: google.maps.TravelMode.DRIVING,
+                travelMode: google.maps.TravelMode[transportMode],
             });
 
             const newDistances: Record<string, DistanceInfo> = {};
