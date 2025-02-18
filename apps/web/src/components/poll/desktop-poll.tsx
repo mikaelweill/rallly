@@ -383,23 +383,6 @@ const DesktopPoll: React.FunctionComponent = () => {
                               }}
                             />
                           ))}
-                          {participants.length === 0 && mode === "view" && (
-                            <tr>
-                              <td colSpan={poll.options.length + 1}>
-                                <EmptyState className="p-8">
-                                  <EmptyStateIcon>
-                                    <Users2Icon className="h-12 w-12" />
-                                  </EmptyStateIcon>
-                                  <EmptyStateTitle>
-                                    <Trans i18nKey="noParticipants" />
-                                  </EmptyStateTitle>
-                                  <EmptyStateDescription>
-                                    <Trans i18nKey="noParticipantsDescription" />
-                                  </EmptyStateDescription>
-                                </EmptyState>
-                              </td>
-                            </tr>
-                          )}
                         </tbody>
                       </table>
                       <SaveBar mode={mode} />
