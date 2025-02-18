@@ -155,7 +155,7 @@ export function LocationPicker({ value, onChange, onLocationsChange, multipleLoc
                     {locations.map((location, index) => (
                         <div key={location.placeId ?? index} className="flex items-center gap-2">
                             <div className="flex-1 p-2 bg-muted rounded-md">
-                                {location.address}
+                                {`${index + 1}. ${location.address}`}
                             </div>
                             <Button
                                 variant="ghost"

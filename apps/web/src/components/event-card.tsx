@@ -97,7 +97,7 @@ export function EventCard() {
                       <Icon>
                         <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
                       </Icon>
-                      <TruncatedLinkify>{location.address}</TruncatedLinkify>
+                      <TruncatedLinkify>{`${index + 1}. ${location.address}`}</TruncatedLinkify>
                     </p>
                   ))}
                 </div>

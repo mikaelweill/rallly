@@ -127,7 +127,7 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
                                                 <td className="sticky left-0 z-10 h-12 bg-white px-4">
                                                     <div className="flex items-center gap-x-2 text-sm">
                                                         <MapPinIcon className="size-4 text-gray-500" />
-                                                        <div className="truncate">{location.address}</div>
+                                                        <div className="truncate">{`${index + 1}. ${location.address}`}</div>
                                                     </div>
                                                 </td>
                                                 {participants.map((participant) => {

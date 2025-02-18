@@ -28,6 +28,7 @@ export interface LocationOptionProps {
     onChange: (vote: VoteType) => void;
     participants: Participant[];
     selectedParticipantId?: string;
+    index: number;
 }
 
 const LocationVoteSummary: React.FunctionComponent<{ locationId: string }> = ({
@@ -110,6 +111,7 @@ const LocationOption: React.FunctionComponent<LocationOptionProps> = ({
     vote,
     onChange,
     editable = false,
+    index,
 }) => {
     const poll = usePoll();
     const showVotes = !!(selectedParticipantId || editable);
@@ -134,7 +136,7 @@ const LocationOption: React.FunctionComponent<LocationOptionProps> = ({
             <div className="flex h-7 items-center justify-between gap-x-4">
                 <div className="flex items-center gap-x-4 text-sm">
                     <MapPinIcon className="size-4 text-gray-500" />
-                    <div>{address}</div>
+                    <div>{`${index + 1}. ${address}`}</div>
                 </div>
                 <div className="flex items-center gap-x-4">
                     {role === "participant" && poll.hideParticipants ? (
