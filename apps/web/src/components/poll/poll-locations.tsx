@@ -1,6 +1,6 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon } from "lucide-react";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription } from "@rallly/ui/alert";
@@ -19,6 +19,8 @@ type DistanceInfo = {
     duration: string;
 };
 
+type TransportMode = 'DRIVING' | 'WALKING' | 'BICYCLING' | 'TRANSIT';
+
 export function PollLocations() {
     const poll = usePoll();
     const { t } = useTranslation();
@@ -31,6 +33,7 @@ export function PollLocations() {
     const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
     const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+    const [transportMode, setTransportMode] = useState<TransportMode>('DRIVING');
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -153,52 +156,101 @@ export function PollLocations() {
             <div className="space-y-2 p-4">
                 <div className="space-y-4">
                     <h3 className="text-sm font-medium">Locations</h3>
-                    <div className="flex gap-2">
-                        {isLoaded && (
-                            <Autocomplete
-                                onLoad={setAutocomplete}
-                                onPlaceChanged={() => {
-                                    const place = autocomplete?.getPlace();
-                                    if (place?.geometry?.location) {
-                                        setUserLocation({
-                                            lat: place.geometry.location.lat(),
-                                            lng: place.geometry.location.lng()
-                                        });
-                                        setStartAddress(place.formatted_address ?? "");
-                                        setError(null);
-                                    }
-                                }}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            {isLoaded && (
+                                <div className="relative flex-1">
+                                    <Autocomplete
+                                        onLoad={setAutocomplete}
+                                        onPlaceChanged={() => {
+                                            const place = autocomplete?.getPlace();
+                                            if (place?.geometry?.location) {
+                                                setUserLocation({
+                                                    lat: place.geometry.location.lat(),
+                                                    lng: place.geometry.location.lng()
+                                                });
+                                                setStartAddress(place.formatted_address ?? "");
+                                                setError(null);
+                                            }
+                                        }}
+                                    >
+                                        <Input
+                                            type="text"
+                                            placeholder="Enter starting location..."
+                                            value={startAddress}
+                                            onChange={(e) => setStartAddress(e.target.value)}
+                                            className="w-full pr-24"
+                                        />
+                                    </Autocomplete>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleUseCurrentLocation}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                                    >
+                                        <Icon>
+                                            <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
+                                        </Icon>
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex gap-1 items-center rounded-md border bg-background p-1">
+                                <Button
+                                    variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setTransportMode('DRIVING')}
+                                    className="h-7"
+                                >
+                                    <Icon>
+                                        <Car className="h-4 w-4" />
+                                    </Icon>
+                                </Button>
+                                <Button
+                                    variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setTransportMode('WALKING')}
+                                    className="h-7"
+                                >
+                                    <Icon>
+                                        <PersonStanding className="h-4 w-4" />
+                                    </Icon>
+                                </Button>
+                                <Button
+                                    variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setTransportMode('BICYCLING')}
+                                    className="h-7"
+                                >
+                                    <Icon>
+                                        <Bike className="h-4 w-4" />
+                                    </Icon>
+                                </Button>
+                                <Button
+                                    variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setTransportMode('TRANSIT')}
+                                    className="h-7"
+                                >
+                                    <Icon>
+                                        <Bus className="h-4 w-4" />
+                                    </Icon>
+                                </Button>
+                            </div>
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleCalculateDistances}
+                                disabled={calculating || !isLoaded || !startAddress}
+                                className="min-w-[100px]"
                             >
-                                <Input
-                                    type="text"
-                                    placeholder="Enter starting location..."
-                                    value={startAddress}
-                                    onChange={(e) => setStartAddress(e.target.value)}
-                                    className="flex-1"
-                                />
-                            </Autocomplete>
-                        )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleUseCurrentLocation}
-                        >
-                            <Icon>
-                                <CrosshairIcon className="mr-2 h-4 w-4" />
-                            </Icon>
-                            Current
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleCalculateDistances}
-                            disabled={calculating || !isLoaded || !startAddress}
-                        >
-                            <Icon>
-                                <NavigationIcon className="mr-2 h-4 w-4" />
-                            </Icon>
-                            {calculating ? "Calculating..." : "Calculate"}
-                        </Button>
+                                <Icon>
+                                    <NavigationIcon className="mr-2 h-4 w-4" />
+                                </Icon>
+                                {calculating ? "Calculating..." : "Calculate"}
+                            </Button>
+                        </div>
                     </div>
                 </div>
                 {error && (
