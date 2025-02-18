@@ -201,7 +201,7 @@ export function PollLocations() {
                                     variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setTransportMode('DRIVING')}
-                                    className="h-7"
+                                    className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
                                 >
                                     <Icon>
                                         <Car className="h-4 w-4" />
@@ -211,7 +211,7 @@ export function PollLocations() {
                                     variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setTransportMode('WALKING')}
-                                    className="h-7"
+                                    className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
                                 >
                                     <Icon>
                                         <PersonStanding className="h-4 w-4" />
@@ -221,7 +221,7 @@ export function PollLocations() {
                                     variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setTransportMode('BICYCLING')}
-                                    className="h-7"
+                                    className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
                                 >
                                     <Icon>
                                         <Bike className="h-4 w-4" />
@@ -231,7 +231,7 @@ export function PollLocations() {
                                     variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
                                     size="sm"
                                     onClick={() => setTransportMode('TRANSIT')}
-                                    className="h-7"
+                                    className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
                                 >
                                     <Icon>
                                         <Bus className="h-4 w-4" />
