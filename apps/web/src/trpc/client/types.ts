@@ -15,6 +15,7 @@ export type GetPollApiResponse = {
   closed: boolean;
   createdAt: Date;
   deleted: boolean;
+  isLocationOptimized: boolean;
 };
 
 export type Vote = {

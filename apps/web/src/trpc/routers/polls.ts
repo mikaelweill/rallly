@@ -454,6 +454,7 @@ export const polls = router({
           disableComments: true,
           hideScores: true,
           requireParticipantEmail: true,
+          isLocationOptimized: true,
           locations: {
             select: {
               id: true,

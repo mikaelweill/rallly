@@ -30,6 +30,7 @@ import { LegacyPollContextProvider } from "@/components/poll/poll-context-provid
 import { Trans } from "@/components/trans";
 import { useUser } from "@/components/user-provider";
 import { usePoll } from "@/contexts/poll";
+import { Badge } from "@rallly/ui/badge";
 
 const AdminControls = () => {
   return (
@@ -69,7 +70,14 @@ const Layout = ({ children }: React.PropsWithChildren) => {
           <div>
             <GroupPollIcon size="xs" />
           </div>
-          <h1 className="truncate text-sm font-semibold">{poll.title}</h1>
+          <div className="flex items-center gap-x-2">
+            <h1 className="truncate text-sm font-semibold">{poll.title}</h1>
+            {poll.isLocationOptimized && (
+              <Badge variant="secondary" className="text-xs">
+                Smart Location
+              </Badge>
+            )}
+          </div>
         </div>
         <div>
           <AdminControls />
