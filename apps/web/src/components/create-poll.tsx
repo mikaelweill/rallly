@@ -56,6 +56,11 @@ export const CreatePoll: React.FunctionComponent = () => {
       duration: 60,
       isLocationOptimized: false,
       requireParticipantEmail: false,
+      // Venue preferences
+      venueType: "",
+      subType: "",
+      minRating: undefined,
+      priceLevel: undefined,
     },
   });
 

@@ -7,6 +7,7 @@ import { useFormContext } from "react-hook-form";
 import { Trans } from "@/components/trans";
 import { useFormValidation } from "@/utils/form-validation";
 import { LocationPicker } from "@/components/location-picker/location-picker";
+import { VenuePreferences, VenuePreferencesData } from "@/components/venue-preferences";
 
 interface Location {
   address: string;
@@ -15,7 +16,7 @@ interface Location {
   lng?: number;
 }
 
-export interface PollDetailsData {
+export interface PollDetailsData extends VenuePreferencesData {
   title: string;
   locations?: Location[];
   description: string;
@@ -98,7 +99,9 @@ export const PollDetailsForm = ({ showLocationPicker = true }: PollDetailsFormPr
             )}
           />
 
-          {!isLocationOptimized && (
+          {isLocationOptimized ? (
+            <VenuePreferences />
+          ) : (
             <FormField
               control={control}
               name="locations"
@@ -120,11 +123,6 @@ export const PollDetailsForm = ({ showLocationPicker = true }: PollDetailsFormPr
                 />
               )}
             />
-          )}
-          {isLocationOptimized && (
-            <div className="rounded-lg border border-dashed p-4 text-center text-gray-500">
-              Venue preferences coming soon...
-            </div>
           )}
         </>
       )}

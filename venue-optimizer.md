@@ -3,98 +3,41 @@
 ## Overview
 The Venue Optimizer helps find optimal meeting locations based on participant locations and venue preferences, optimizing for total travel time across different transportation modes.
 
-## Core Components
+## Implementation Progress
 
-### 1. Poll Creation Enhancement
-#### Optimization Toggle
-- Add "Enable Location Optimization" toggle during poll creation
-- When enabled:
-  - Hide standard location input interface
-  - Show venue preference configuration panel
+### ✅ Core UI Setup (Completed)
+- [x] Added location type selector in poll creation
+- [x] Integrated with form state management
+- [x] Toggle between standard location picker and smart location
+- [x] Basic placeholder for venue preferences UI
+- [x] Database schema changes for location optimization
 
-#### Venue Preferences Configuration
-- **Venue Type Selection**
-  - Primary venue type (e.g., "restaurant", "cafe", "bar")
-  - Optional sub-type (e.g., "pizza", "sushi", "coffee")
-- **Venue Criteria**
-  - Minimum rating (1-5 stars)
-  - Price level ($ to $$$$)
-  - Operating hours validation against poll time
+### 🚧 Venue Preferences UI (Next Up)
+- [ ] Create VenuePreferences component
+  - [ ] Primary venue type selector (restaurant, cafe, etc.)
+  - [ ] Optional sub-type field (pizza, sushi, etc.)
+  - [ ] Minimum rating selector (1-5 stars)
+  - [ ] Price level selector ($ to $$$$)
+  - [ ] Operating hours validation against poll time
+- [ ] Style to match existing UI components
+- [ ] Add proper translations
+- [ ] Integrate with form state
 
-### 2. Participant Location & Transport
-- Location input field for each participant
-- Transportation mode selection (driving, transit, walking)
-- Uses existing `PollLocation` model to store final selected venues
+### 🚧 Participant Location Collection (Planned)
+- [ ] Add location input to participant form
+- [ ] Add transportation mode selector
+- [ ] Store participant locations securely
+- [ ] Show participant locations on map
 
-### 3. Location Optimization
-#### Optimization Trigger
-- "Optimize Location" button in poll finalization dialog
-- Progress indicator during optimization
-- Option to re-optimize if needed
+### 🚧 Location Optimization (Planned)
+- [ ] Implement optimization algorithm
+- [ ] Integrate with Google Places API
+- [ ] Calculate and rank venues
+- [ ] Display top suggestions
 
-#### Optimization Algorithm
-1. **Data Collection**
-   - Gather all participant locations
-   - Collect transportation modes
-   - Consider poll time slot(s)
+## Technical Details
 
-2. **Travel Time Calculation**
-   - Calculate ETAs for each participant based on their transport mode
-   - Weight locations based on total travel time across all participants
-   - Consider operating hours against poll time slot
-
-3. **Venue Search**
-   - Query Google Places API with:
-     - Venue type/preferences
-     - Rating/price criteria
-     - Operating hours validation
-
-4. **Ranking System**
-   - Score venues based on:
-     - Total weighted travel time across all participants
-     - Match with venue preferences
-     - Google rating and reviews
-     - Price level
-     - Operating hours compatibility
-
-### 4. Results Display
-#### Venue Suggestions
-- Display top 3-5 optimized venues
-- For each venue show:
-  - Name and basic details
-  - Individual travel times for each participant
-  - Aggregate score based on total travel time
-  - Operating hours
-  - Price level
-  - Rating and review count
-
-#### Interactive Map
-- Show all suggested venues
-- Display participant starting points
-- Travel routes visualization
-- Click-through to venue details
-
-### 5. Final Selection
-- Allow poll creator to:
-  - Select final venue from suggestions
-  - Request new suggestions with adjusted criteria
-  - Override with manual selection
-
-## Technical Requirements
-
-### API Integration
-- Google Places API
-  - Place Search
-  - Place Details
-  - Photos
-- Google Distance Matrix API
-  - Travel time calculations
-  - Multiple transportation modes
-- Google Maps Geocoding API
-  - Address validation
-  - Coordinate conversion
-
-### Database Schema Updates
+### Completed Schema Changes
 ```prisma
 model Poll {
   // ... existing fields ...
@@ -112,12 +55,6 @@ model VenuePreferences {
   priceLevel    Int?     // 1-4
 }
 
-// Extend existing Participant model
-model Participant {
-  // ... existing fields ...
-  startLocation ParticipantStartLocation?
-}
-
 model ParticipantStartLocation {
   id            String      @id @default(cuid())
   participantId String      @unique
@@ -131,9 +68,25 @@ model ParticipantStartLocation {
 }
 ```
 
-## Future Enhancements
-- Real-time venue availability checking
-- Weather consideration in venue scoring
-- Public transport schedule integration
-- Historical venue popularity data
-- Dietary restriction considerations 
+### Next Steps
+1. Create the VenuePreferences component
+   - Use existing UI components (selectors, inputs)
+   - Match the design language of the app
+   - Add proper validation
+
+2. Update the participant form
+   - Add location input
+   - Add transport mode selector
+   - Update participant creation/edit flows
+
+3. Implement the optimization logic
+   - Google Places API integration
+   - Travel time calculations
+   - Venue ranking algorithm
+
+## Notes
+- Core location type selection is now implemented
+- Need to focus on venue preferences UI next
+- Keep the UI simple and intuitive
+- Maintain consistency with existing components
+- All features should work with the existing location voting system 
