@@ -54,6 +54,8 @@ export const CreatePoll: React.FunctionComponent = () => {
       hideParticipants: false,
       disableComments: false,
       duration: 60,
+      isLocationOptimized: false,
+      requireParticipantEmail: false,
     },
   });
 
@@ -91,6 +93,7 @@ export const CreatePoll: React.FunctionComponent = () => {
               disableComments: formData?.disableComments,
               hideScores: formData?.hideScores,
               requireParticipantEmail: formData?.requireParticipantEmail,
+              isLocationOptimized: formData?.isLocationOptimized,
               options: required(formData?.options).map((option) => ({
                 startDate: option.type === "date" ? option.date : option.start,
                 endDate: option.type === "timeSlot" ? option.end : undefined,

@@ -140,6 +140,8 @@ model Poll {
   disableComments         Boolean    @default(false) @map("disable_comments")
   requireParticipantEmail Boolean    @default(false) @map("require_participant_email")
   locationVotes           LocationVote[]
+  isLocationOptimized     Boolean    @default(false) @map("is_location_optimized")
+  venuePreferences        VenuePreferences?
 
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
@@ -214,6 +216,7 @@ model Participant {
   updatedAt DateTime? @updatedAt @map("updated_at")
   deleted   Boolean   @default(false)
   deletedAt DateTime? @map("deleted_at")
+  startLocation ParticipantStartLocation?
 
   votes         Vote[]
   locationVotes LocationVote[]
@@ -312,4 +315,32 @@ model LocationVote {
   @@index([participantId], type: Hash)
   @@index([locationId], type: Hash)
   @@map("location_votes")
+}
+
+model VenuePreferences {
+  id            String   @id @default(cuid())
+  pollId        String   @unique @map("poll_id")
+  poll          Poll     @relation(fields: [pollId], references: [id])
+  venueType     String   @map("venue_type")
+  subType       String?  @map("sub_type")
+  minRating     Float?   @map("min_rating")
+  priceLevel    Int?     @map("price_level")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("venue_preferences")
+}
+
+model ParticipantStartLocation {
+  id            String      @id @default(cuid())
+  participantId String      @unique @map("participant_id")
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  latitude      Float
+  longitude     Float
+  address       String?
+  transportMode String      @default("driving") @map("transport_mode")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("participant_start_locations")
 }
