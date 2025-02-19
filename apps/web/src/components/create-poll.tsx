@@ -58,7 +58,6 @@ export const CreatePoll: React.FunctionComponent = () => {
       requireParticipantEmail: false,
       // Venue preferences
       venueType: "",
-      subType: "",
       minRating: undefined,
       priceLevel: undefined,
     },
@@ -99,6 +98,12 @@ export const CreatePoll: React.FunctionComponent = () => {
               hideScores: formData?.hideScores,
               requireParticipantEmail: formData?.requireParticipantEmail,
               isLocationOptimized: formData?.isLocationOptimized,
+              // Add venue preferences if location is optimized
+              venuePreferences: formData.isLocationOptimized ? {
+                venueType: formData.venueType,
+                minRating: formData.minRating,
+                priceLevel: formData.priceLevel,
+              } : undefined,
               options: required(formData?.options).map((option) => ({
                 startDate: option.type === "date" ? option.date : option.start,
                 endDate: option.type === "timeSlot" ? option.end : undefined,

@@ -14,10 +14,10 @@ The Venue Optimizer helps find optimal meeting locations based on participant lo
 
 ### 🚧 Venue Preferences UI (In Progress)
 - [x] Basic venue type selector
-- [ ] Add price range selector ($ to $$$$)
-- [ ] Add minimum rating selector (1-5 stars)
+- [x] Add price range selector ($ to $$$$) with intuitive green highlighting
+- [x] Add minimum rating selector with interactive star display
 - [ ] Add operating hours validation against poll time
-- [ ] Style to match existing UI components
+- [x] Style to match existing UI components
 - [ ] Add proper translations
 
 ### 🚧 Participant Location Collection (Next Up)
@@ -72,10 +72,10 @@ model ParticipantStartLocation {
 ```
 
 ### Next Steps
-1. Implement additional venue preferences:
-   - Add price range selector using radio buttons or slider
-   - Add rating selector with star visualization
-   - Consider adding cuisine type for restaurants
+1. ~~Implement additional venue preferences:~~
+   - ~~Add price range selector using radio buttons or slider~~
+   - ~~Add rating selector with star visualization~~
+   - ~~Consider adding cuisine type for restaurants~~
 
 2. Create participant location collection:
    - Design mobile-friendly location input
@@ -91,7 +91,8 @@ model ParticipantStartLocation {
 
 ## Notes
 - Core venue type selection is now implemented with official Google Places types
-- Need to focus on additional preferences next
+- Price and rating selectors added with intuitive UI (green $ and yellow ★)
+- Need to focus on participant location collection next
 - Keep the UI simple and intuitive
 - Consider rate limiting and API usage costs
 - All features should work with the existing location voting system 

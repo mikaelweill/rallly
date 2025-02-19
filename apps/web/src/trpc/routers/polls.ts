@@ -144,25 +144,28 @@ export const polls = router({
     .input(
       z.object({
         title: z.string().trim().min(1),
-        timeZone: z.string().optional(),
         description: z.string().optional(),
+        timeZone: z.string().optional(),
         locations: z.array(z.object({
           address: z.string(),
           placeId: z.string().optional(),
           lat: z.number().optional(),
           lng: z.number().optional(),
         })).optional(),
+        options: z.array(z.object({
+          startDate: z.string(),
+          endDate: z.string().optional(),
+        })),
         hideParticipants: z.boolean().optional(),
         hideScores: z.boolean().optional(),
         disableComments: z.boolean().optional(),
         requireParticipantEmail: z.boolean().optional(),
-        options: z
-          .object({
-            startDate: z.string(),
-            endDate: z.string().optional(),
-          })
-          .array(),
-        demo: z.boolean().optional(),
+        isLocationOptimized: z.boolean().optional(),
+        venuePreferences: z.object({
+          venueType: z.string(),
+          minRating: z.number().optional(),
+          priceLevel: z.number().optional(),
+        }).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -223,11 +226,18 @@ export const polls = router({
           disableComments: input.disableComments,
           hideScores: input.hideScores,
           requireParticipantEmail: input.requireParticipantEmail,
+          isLocationOptimized: input.isLocationOptimized,
+          venuePreferences: input.venuePreferences && input.isLocationOptimized ? {
+            create: {
+              venueType: input.venuePreferences.venueType,
+              minRating: input.venuePreferences.minRating,
+              priceLevel: input.venuePreferences.priceLevel,
+            },
+          } : undefined,
         },
       });
 
       const pollLink = absoluteUrl(`/poll/${pollId}`);
-
       const participantLink = shortUrl(`/invite/${pollId}`);
 
       if (ctx.user.isGuest === false) {
