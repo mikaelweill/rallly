@@ -76,8 +76,8 @@ export const PollDetailsForm = ({ showLocationPicker = true }: PollDetailsFormPr
                   <button
                     type="button"
                     className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${!field.value
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:text-gray-900"
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-500 hover:text-gray-900"
                       }`}
                     onClick={() => field.onChange(false)}
                   >
@@ -86,8 +86,8 @@ export const PollDetailsForm = ({ showLocationPicker = true }: PollDetailsFormPr
                   <button
                     type="button"
                     className={`flex-1 rounded-md px-3 py-2 text-sm font-medium ${field.value
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:text-gray-900"
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-500 hover:text-gray-900"
                       }`}
                     onClick={() => field.onChange(true)}
                   >
