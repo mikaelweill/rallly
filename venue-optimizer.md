@@ -9,31 +9,34 @@ The Venue Optimizer helps find optimal meeting locations based on participant lo
 - [x] Added location type selector in poll creation
 - [x] Integrated with form state management
 - [x] Toggle between standard location picker and smart location
-- [x] Basic placeholder for venue preferences UI
+- [x] Created categorized venue type dropdown with official Google Places types
 - [x] Database schema changes for location optimization
 
-### 🚧 Venue Preferences UI (Next Up)
-- [ ] Create VenuePreferences component
-  - [ ] Primary venue type selector (restaurant, cafe, etc.)
-  - [ ] Optional sub-type field (pizza, sushi, etc.)
-  - [ ] Minimum rating selector (1-5 stars)
-  - [ ] Price level selector ($ to $$$$)
-  - [ ] Operating hours validation against poll time
+### 🚧 Venue Preferences UI (In Progress)
+- [x] Basic venue type selector
+- [ ] Add price range selector ($ to $$$$)
+- [ ] Add minimum rating selector (1-5 stars)
+- [ ] Add operating hours validation against poll time
 - [ ] Style to match existing UI components
 - [ ] Add proper translations
-- [ ] Integrate with form state
 
-### 🚧 Participant Location Collection (Planned)
+### 🚧 Participant Location Collection (Next Up)
 - [ ] Add location input to participant form
-- [ ] Add transportation mode selector
+- [ ] Add transportation mode selector (driving, transit, walking)
 - [ ] Store participant locations securely
 - [ ] Show participant locations on map
+- [ ] Add privacy controls for location sharing
 
 ### 🚧 Location Optimization (Planned)
-- [ ] Implement optimization algorithm
-- [ ] Integrate with Google Places API
-- [ ] Calculate and rank venues
-- [ ] Display top suggestions
+- [ ] Set up Google Places API integration
+- [ ] Implement venue search within radius
+- [ ] Calculate travel times for each participant
+- [ ] Rank venues based on:
+  - [ ] Average travel time
+  - [ ] Venue rating
+  - [ ] Price level match
+  - [ ] Operating hours
+- [ ] Display top suggestions with details
 
 ## Technical Details
 
@@ -69,24 +72,26 @@ model ParticipantStartLocation {
 ```
 
 ### Next Steps
-1. Create the VenuePreferences component
-   - Use existing UI components (selectors, inputs)
-   - Match the design language of the app
-   - Add proper validation
+1. Implement additional venue preferences:
+   - Add price range selector using radio buttons or slider
+   - Add rating selector with star visualization
+   - Consider adding cuisine type for restaurants
 
-2. Update the participant form
-   - Add location input
-   - Add transport mode selector
-   - Update participant creation/edit flows
+2. Create participant location collection:
+   - Design mobile-friendly location input
+   - Implement geocoding for addresses
+   - Add transport mode selection
+   - Consider privacy implications
 
-3. Implement the optimization logic
-   - Google Places API integration
-   - Travel time calculations
-   - Venue ranking algorithm
+3. Set up venue optimization:
+   - Create Google Places API service
+   - Implement caching for API responses
+   - Design ranking algorithm
+   - Create venue suggestion UI
 
 ## Notes
-- Core location type selection is now implemented
-- Need to focus on venue preferences UI next
+- Core venue type selection is now implemented with official Google Places types
+- Need to focus on additional preferences next
 - Keep the UI simple and intuitive
-- Maintain consistency with existing components
+- Consider rate limiting and API usage costs
 - All features should work with the existing location voting system 
