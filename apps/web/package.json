@@ -23,6 +23,7 @@
     "@aws-sdk/s3-request-presigner": "^3.645.0",
     "@hookform/resolvers": "^3.3.1",
     "@next/bundle-analyzer": "^12.3.4",
+    "@next/swc-darwin-arm64": "14.2.21",
     "@panva/hkdf": "^1.2.1",
     "@radix-ui/react-slot": "^1.0.1",
     "@radix-ui/react-switch": "^1.0.2",
