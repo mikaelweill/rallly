@@ -228,14 +228,22 @@ export function PollLocations() {
                                             <Autocomplete
                                                 onLoad={setAutocomplete}
                                                 onPlaceChanged={() => {
+                                                    console.log("Place changed");
                                                     const place = autocomplete?.getPlace();
+                                                    console.log("Place:", place);
                                                     if (place?.geometry?.location) {
+                                                        console.log("Location:", {
+                                                            lat: place.geometry.location.lat(),
+                                                            lng: place.geometry.location.lng()
+                                                        });
                                                         setStartAddress(place.formatted_address ?? "");
                                                         setUserLocation({
                                                             lat: place.geometry.location.lat(),
                                                             lng: place.geometry.location.lng()
                                                         });
                                                         setError(null);
+                                                    } else {
+                                                        console.log("No location in place object");
                                                     }
                                                 }}
                                             >
@@ -245,7 +253,6 @@ export function PollLocations() {
                                                     value={startAddress}
                                                     onChange={(e) => setStartAddress(e.target.value)}
                                                     className="w-full pr-24"
-                                                    disabled={!!setLocations.find(loc => loc.userName === "You")}
                                                 />
                                             </Autocomplete>
                                             <Button
@@ -280,7 +287,6 @@ export function PollLocations() {
                                                     }
                                                 }}
                                                 className="absolute right-2 top-1/2 -translate-y-1/2"
-                                                disabled={!!setLocations.find(loc => loc.userName === "You")}
                                             >
                                                 <Icon>
                                                     <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
@@ -330,31 +336,35 @@ export function PollLocations() {
                             <div className="relative">
                                 <LocationMap
                                     address=""
-                                    locations={setLocations.map((loc, index) => ({
-                                        id: loc.id,
-                                        address: loc.address,
-                                        lat: loc.location.lat,
-                                        lng: loc.location.lng
-                                    }))}
+                                    locations={[
+                                        ...(userLocation && !setLocations.find(loc => loc.userName === "You") ? [{
+                                            id: "temp",
+                                            address: startAddress,
+                                            lat: userLocation.lat,
+                                            lng: userLocation.lng
+                                        }] : []),
+                                        ...setLocations.map((loc) => ({
+                                            id: loc.id,
+                                            address: loc.address,
+                                            lat: loc.location.lat,
+                                            lng: loc.location.lng
+                                        }))
+                                    ]}
                                     className="h-48 w-full"
                                     isLoaded={isLoaded}
-                                    interactive={isEditing && !setLocations.find(loc => loc.userName === "You")}
-                                    userLocation={isEditing && !setLocations.find(loc => loc.userName === "You") ? userLocation : undefined}
-                                    tempLocation={isEditing && !setLocations.find(loc => loc.userName === "You") && userLocation ? userLocation : undefined}
+                                    interactive={isEditing}
                                     onLocationChange={async (_, latLng) => {
-                                        if (isEditing && !setLocations.find(loc => loc.userName === "You")) {
-                                            setUserLocation(latLng);
-                                            const geocoder = new google.maps.Geocoder();
-                                            const result = await geocoder.geocode({
-                                                location: latLng
-                                            });
-                                            if (result.results[0]) {
-                                                setStartAddress(result.results[0].formatted_address);
-                                                setError(null);
-                                            }
+                                        setUserLocation(latLng);
+                                        const geocoder = new google.maps.Geocoder();
+                                        const result = await geocoder.geocode({
+                                            location: latLng
+                                        });
+                                        if (result.results[0]) {
+                                            setStartAddress(result.results[0].formatted_address);
+                                            setError(null);
                                         }
                                     }}
-                                    showUserLocationAsDot={!poll.isLocationOptimized}
+                                    showUserLocationAsDot={false}
                                 />
                             </div>
                         </div>
@@ -371,14 +381,22 @@ export function PollLocations() {
                                             <Autocomplete
                                                 onLoad={setAutocomplete}
                                                 onPlaceChanged={() => {
+                                                    console.log("Place changed");
                                                     const place = autocomplete?.getPlace();
+                                                    console.log("Place:", place);
                                                     if (place?.geometry?.location) {
+                                                        console.log("Location:", {
+                                                            lat: place.geometry.location.lat(),
+                                                            lng: place.geometry.location.lng()
+                                                        });
                                                         setUserLocation({
                                                             lat: place.geometry.location.lat(),
                                                             lng: place.geometry.location.lng()
                                                         });
                                                         setStartAddress(place.formatted_address ?? "");
                                                         setError(null);
+                                                    } else {
+                                                        console.log("No location in place object");
                                                     }
                                                 }}
                                             >
