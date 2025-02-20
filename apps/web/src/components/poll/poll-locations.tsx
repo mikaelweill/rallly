@@ -303,14 +303,23 @@ export function PollLocations() {
                                                 setSetLocations(prev => prev.filter(loc => loc.userName !== "You"));
                                                 setUserLocation(undefined);
                                                 setStartAddress("");
+                                                // Clear the form value too
+                                                votingForm.setValue("startLocation", undefined);
                                             } else if (userLocation && startAddress) {
                                                 // Add to set locations
                                                 setSetLocations(prev => [...prev, {
                                                     id: Math.random().toString(),
-                                                    userName: "You", // This should come from user context
+                                                    userName: "You",
                                                     address: startAddress,
                                                     location: userLocation
                                                 }]);
+                                                // Update the form with the locked location
+                                                votingForm.setValue("startLocation", {
+                                                    address: startAddress,
+                                                    latitude: userLocation.lat,
+                                                    longitude: userLocation.lng,
+                                                    transportMode
+                                                });
                                             }
                                         }}
                                         disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}

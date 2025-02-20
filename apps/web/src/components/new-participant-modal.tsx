@@ -11,7 +11,7 @@ import { useTranslation } from "next-i18next";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, Users2Icon } from "lucide-react";
+import { MapPinIcon, Users2Icon, NavigationIcon } from "lucide-react";
 import { Trans } from "react-i18next";
 
 import { usePoll } from "@/contexts/poll";
@@ -43,6 +43,12 @@ interface NewParticipantModalProps {
   locationVotes?: { locationId: string; type: VoteType }[];
   onSubmit?: (data: { id: string }) => void;
   onCancel?: () => void;
+  startLocation?: {
+    address: string;
+    latitude: number;
+    longitude: number;
+    transportMode?: string;
+  };
 }
 
 const VoteSummary = ({
@@ -141,6 +147,12 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
   const { t } = useTranslation();
   const poll = usePoll();
 
+  console.log("[NewParticipantForm] Props:", {
+    isLocationOptimized: poll.isLocationOptimized,
+    startLocation: props.startLocation,
+    locationVotes: props.locationVotes,
+  });
+
   const isEmailRequired = poll.requireParticipantEmail;
 
   const { user } = useUser();
@@ -171,6 +183,7 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
             email: data.email,
             votes: props.votes,
             locationVotes: props.locationVotes,
+            startLocation: props.startLocation,
           });
 
           props.onSubmit?.(participant);
@@ -229,6 +242,27 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
               </div>
             </div>
             <VoteSummary votes={props.locationVotes} />
+          </>
+        )}
+        {props.startLocation && (
+          <>
+            <div className="text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Icon><NavigationIcon className="h-4 w-4" /></Icon>
+                <Trans i18nKey="startingLocation" />
+              </div>
+            </div>
+            <div className="rounded border p-3">
+              <div className="flex items-center gap-2">
+                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{props.startLocation.address}</span>
+              </div>
+              {props.startLocation.transportMode && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Transport mode: {props.startLocation.transportMode.toLowerCase()}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>

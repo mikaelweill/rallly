@@ -42,6 +42,12 @@ const formSchema = z.object({
       })
       .optional(),
   ),
+  startLocation: z.object({
+    address: z.string(),
+    latitude: z.number(),
+    longitude: z.number(),
+    transportMode: z.string().optional(),
+  }).optional(),
 });
 
 type VotingFormValues = z.infer<typeof formSchema>;
@@ -139,12 +145,24 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
   });
 
   const mode = form.watch("mode");
+  const startLocation = form.watch("startLocation");
+
+  console.log("[VotingForm] Current form state:", {
+    mode,
+    startLocation,
+    allValues: form.getValues(),
+  });
 
   return (
     <FormProvider {...form}>
       <form
         id="voting-form"
         onSubmit={form.handleSubmit(async (data) => {
+          console.log("[VotingForm] Form submission:", {
+            data,
+            startLocation: form.getValues("startLocation"),
+          });
+
           if (data.participantId) {
             // update participant
             await updateParticipant.mutateAsync({
@@ -166,6 +184,11 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
             });
           } else {
             // new participant
+            console.log("[VotingForm] Opening confirmation modal with:", {
+              votes: normalizeVotesForDisplay(optionIds, form.watch("votes")),
+              locationVotes: normalizeVotesForDisplay(locationIds, form.watch("locationVotes")),
+              startLocation: form.watch("startLocation"),
+            });
             setIsNewParticipantModalOpen(true);
           }
         })}
@@ -224,7 +247,12 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
           <NewParticipantForm
             votes={normalizeVotesForDisplay(optionIds, form.watch("votes"))}
             locationVotes={normalizeVotesForDisplay(locationIds, form.watch("locationVotes"))}
+            startLocation={form.watch("startLocation")}
             onSubmit={(newParticipant) => {
+              console.log("[VotingForm] NewParticipantForm submission:", {
+                newParticipant,
+                startLocation: form.watch("startLocation"),
+              });
               form.reset({
                 mode: "view",
                 participantId: newParticipant.id,
@@ -234,6 +262,7 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
                 locationVotes: locations?.map((location) => ({
                   locationId: location.id,
                 })) ?? [],
+                startLocation: form.getValues("startLocation"),
               });
               setIsNewParticipantModalOpen(false);
             }}
