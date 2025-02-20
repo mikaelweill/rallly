@@ -1,9 +1,9 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map } from "lucide-react";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
-import { Alert, AlertDescription } from "@rallly/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@rallly/ui/alert";
 import { Input } from "@rallly/ui/input";
 import { Dialog, DialogContent } from "@rallly/ui/dialog";
 
@@ -23,7 +23,6 @@ type TransportMode = 'DRIVING' | 'WALKING' | 'BICYCLING' | 'TRANSIT';
 
 export function PollLocations() {
     const poll = usePoll();
-    console.log('Poll locations:', poll.locations);
     const { t } = useTranslation();
     const [calculating, setCalculating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -158,13 +157,35 @@ export function PollLocations() {
                 {poll.isLocationOptimized ? (
                     <div className="space-y-4">
                         <Alert>
+                            <AlertTitle>Smart Location</AlertTitle>
                             <AlertDescription>
-                                Smart Location is enabled. Locations will be optimized based on participant preferences.
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap gap-4">
+                                        {poll.venuePreferences?.venueType && (
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon><MapPinIcon className="h-4 w-4" /></Icon>
+                                                <span>{poll.venuePreferences.venueType}</span>
+                                            </div>
+                                        )}
+                                        {poll.venuePreferences?.priceLevel && (
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon><DollarSign className="h-4 w-4" /></Icon>
+                                                <span>{"$".repeat(poll.venuePreferences.priceLevel)}</span>
+                                            </div>
+                                        )}
+                                        {poll.venuePreferences?.minRating && (
+                                            <div className="flex items-center gap-1.5">
+                                                <Icon><Star className="h-4 w-4" /></Icon>
+                                                <span>{poll.venuePreferences.minRating}+ stars</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground mt-2">
+                                        Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
+                                    </div>
+                                </div>
                             </AlertDescription>
                         </Alert>
-                        <div className="text-sm text-muted-foreground">
-                            Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
-                        </div>
                     </div>
                 ) : (
                     <>

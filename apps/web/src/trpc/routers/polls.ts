@@ -455,6 +455,13 @@ export const polls = router({
           hideScores: true,
           requireParticipantEmail: true,
           isLocationOptimized: true,
+          venuePreferences: {
+            select: {
+              venueType: true,
+              minRating: true,
+              priceLevel: true,
+            }
+          },
           locations: {
             select: {
               id: true,
