@@ -381,22 +381,14 @@ export function PollLocations() {
                                             <Autocomplete
                                                 onLoad={setAutocomplete}
                                                 onPlaceChanged={() => {
-                                                    console.log("Place changed");
                                                     const place = autocomplete?.getPlace();
-                                                    console.log("Place:", place);
                                                     if (place?.geometry?.location) {
-                                                        console.log("Location:", {
-                                                            lat: place.geometry.location.lat(),
-                                                            lng: place.geometry.location.lng()
-                                                        });
                                                         setUserLocation({
                                                             lat: place.geometry.location.lat(),
                                                             lng: place.geometry.location.lng()
                                                         });
                                                         setStartAddress(place.formatted_address ?? "");
                                                         setError(null);
-                                                    } else {
-                                                        console.log("No location in place object");
                                                     }
                                                 }}
                                             >
@@ -421,65 +413,63 @@ export function PollLocations() {
                                         </div>
                                     )}
                                 </div>
-                                {/* Transport mode and calculate buttons only shown in edit mode */}
-                                {isEditing && (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex gap-1 items-center rounded-md border bg-background p-1">
-                                            <Button
-                                                variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setTransportMode('DRIVING')}
-                                                className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                            >
-                                                <Icon>
-                                                    <Car className="h-4 w-4" />
-                                                </Icon>
-                                            </Button>
-                                            <Button
-                                                variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setTransportMode('WALKING')}
-                                                className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                            >
-                                                <Icon>
-                                                    <PersonStanding className="h-4 w-4" />
-                                                </Icon>
-                                            </Button>
-                                            <Button
-                                                variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setTransportMode('BICYCLING')}
-                                                className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                            >
-                                                <Icon>
-                                                    <Bike className="h-4 w-4" />
-                                                </Icon>
-                                            </Button>
-                                            <Button
-                                                variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
-                                                size="sm"
-                                                onClick={() => setTransportMode('TRANSIT')}
-                                                className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                            >
-                                                <Icon>
-                                                    <Bus className="h-4 w-4" />
-                                                </Icon>
-                                            </Button>
-                                        </div>
+                                {/* Transport mode and calculate buttons */}
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex gap-1 items-center rounded-md border bg-background p-1">
                                         <Button
-                                            variant="default"
+                                            variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
                                             size="sm"
-                                            onClick={handleCalculateDistances}
-                                            disabled={calculating || !isLoaded || !startAddress}
-                                            className="min-w-[100px]"
+                                            onClick={() => setTransportMode('DRIVING')}
+                                            className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
                                         >
                                             <Icon>
-                                                <NavigationIcon className="mr-2 h-4 w-4" />
+                                                <Car className="h-4 w-4" />
                                             </Icon>
-                                            {calculating ? "Calculating..." : "Calculate"}
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('WALKING')}
+                                            className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <PersonStanding className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('BICYCLING')}
+                                            className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <Bike className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('TRANSIT')}
+                                            className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <Bus className="h-4 w-4" />
+                                            </Icon>
                                         </Button>
                                     </div>
-                                )}
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={handleCalculateDistances}
+                                        disabled={calculating || !isLoaded || !startAddress}
+                                        className="min-w-[100px]"
+                                    >
+                                        <Icon>
+                                            <NavigationIcon className="mr-2 h-4 w-4" />
+                                        </Icon>
+                                        {calculating ? "Calculating..." : "Calculate"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         {error && (
