@@ -539,6 +539,23 @@ export function PollLocations() {
                     </>
                 )}
             </div>
+            {/* Add the map modal */}
+            <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+                <DialogContent className="sm:max-w-[800px] h-[600px]">
+                    <LocationMap
+                        address={poll.locations[0]?.address}
+                        locations={poll.locations}
+                        userLocation={userLocation}
+                        directions={directions}
+                        selectedLocationId={selectedLocationId}
+                        className="h-full w-full"
+                        isLoaded={isLoaded}
+                        interactive={isEditing}
+                        onMarkerClick={handleLocationClick}
+                        showUserLocationAsDot={!poll.isLocationOptimized}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
