@@ -513,7 +513,7 @@ export function PollLocations() {
                             />
                             <Button
                                 size="sm"
-                                variant="outline"
+                                variant="secondary"
                                 className="absolute bottom-2 right-2 bg-white"
                                 onClick={() => setIsMapModalOpen(true)}
                             >
@@ -525,18 +525,6 @@ export function PollLocations() {
                     </>
                 )}
             </div>
-            {!poll.isLocationOptimized && (
-                <LocationMap
-                    address={poll.locations[0]?.address ?? ""}
-                    locations={pollLocations}
-                    userLocation={userLocation}
-                    directions={directions || undefined}
-                    selectedLocationId={selectedLocationId || undefined}
-                    className="h-48 w-full"
-                    isLoaded={isLoaded}
-                    onMarkerClick={handleLocationClick}
-                />
-            )}
         </div>
     );
 } 
