@@ -23,7 +23,7 @@ For Optimized Polls:
 
 ### Phase 1: Map Visibility & Position ✅
 - [x] Ensure map is visible in admin view
-- [ ] Add map to voter view
+- [x] Add map to voter view
 - [x] Position map correctly based on poll type:
   - Non-optimized: Above voting section
   - Optimized: Below voting section
@@ -31,16 +31,19 @@ For Optimized Polls:
   - Map is now properly nested inside VotingForm
   - Save/Cancel buttons appear below both map and voting sections
 
-### Phase 2: Voting Form Integration (In Progress)
+### Phase 2: Voting Form Integration ✅
 - [x] Tie map input sections to voting form state
 - [x] Show/hide input sections based on voting mode
-- [ ] Handle location state in voting form context
+- [x] Handle location state in voting form context
+- [x] Implement pin dropping and saving functionality
 
-### Phase 3: Input Flow (Pending)
-- [ ] Implement immediate pin dropping
-- [ ] Add transport mode selection
-- [ ] Handle pin dragging
-- [ ] Update address field automatically
+### Phase 3: Location Display & Storage (In Progress)
+- [ ] Add starting location to confirmation screen for optimized polls
+- [ ] Add location data to database schema and migrations
+- [ ] Update admin view to display saved locations from DB
+- [ ] Ensure consistent location handling between admin and voter views for:
+  - Optimized polls
+  - Non-optimized polls
 
 ### Phase 4: Data Integration (Pending)
 - [ ] Update mutation to handle location with votes
@@ -57,7 +60,7 @@ For Optimized Polls:
 - Map is in view-only mode showing existing participant locations (if any)
 - No input fields are shown initially
 
-### 2. Location Input Flow (Edit/New Mode)
+### 2. Location Input Flow (Edit/New Mode) ✅
 When user clicks "+" to add/edit votes:
 1. Location input section appears automatically with:
    - Search bar with Google Places autocomplete
@@ -90,10 +93,10 @@ When user clicks "+" to add/edit votes:
 - Map returns to view-only mode
 
 ## Next Steps
-1. Add map to voter view using the same integration pattern as admin view
-2. Complete the voting form integration for location data
-3. Implement the input flow with pin dropping functionality
-4. Add data integration with proper error handling
+1. Implement location display in confirmation screen for optimized polls
+2. Add database schema updates for location storage
+3. Update admin view to fetch and display locations from DB
+4. Ensure consistent behavior between admin and voter views for both poll types
 
 ## Notes
 - All location operations should be cancelable via the voting form
