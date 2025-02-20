@@ -156,36 +156,31 @@ export function PollLocations() {
             <div className="space-y-2 p-4">
                 {poll.isLocationOptimized ? (
                     <div className="space-y-4">
-                        <Alert>
-                            <AlertTitle>Smart Location</AlertTitle>
-                            <AlertDescription>
-                                <div className="space-y-2">
-                                    <div className="flex flex-wrap gap-4">
-                                        {poll.venuePreferences?.venueType && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Icon><MapPinIcon className="h-4 w-4" /></Icon>
-                                                <span>{poll.venuePreferences.venueType}</span>
-                                            </div>
-                                        )}
-                                        {poll.venuePreferences?.priceLevel && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Icon><DollarSign className="h-4 w-4" /></Icon>
-                                                <span>{"$".repeat(poll.venuePreferences.priceLevel)}</span>
-                                            </div>
-                                        )}
-                                        {poll.venuePreferences?.minRating && (
-                                            <div className="flex items-center gap-1.5">
-                                                <Icon><Star className="h-4 w-4" /></Icon>
-                                                <span>{poll.venuePreferences.minRating}+ stars</span>
-                                            </div>
-                                        )}
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-medium">Smart Location</h3>
+                            <div className="flex items-center gap-2">
+                                {poll.venuePreferences?.venueType && (
+                                    <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                                        <Icon><MapPinIcon className="mr-1 h-3.5 w-3.5" /></Icon>
+                                        {poll.venuePreferences.venueType}
                                     </div>
-                                    <div className="text-sm text-muted-foreground mt-2">
-                                        Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
+                                )}
+                                {poll.venuePreferences?.priceLevel && (
+                                    <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                                        Price: {"$".repeat(poll.venuePreferences.priceLevel)}
                                     </div>
-                                </div>
-                            </AlertDescription>
-                        </Alert>
+                                )}
+                                {poll.venuePreferences?.minRating && (
+                                    <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                                        <Icon><Star className="mr-1 h-3.5 w-3.5" /></Icon>
+                                        {poll.venuePreferences.minRating}+ stars
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
+                            Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
+                        </div>
                     </div>
                 ) : (
                     <>
