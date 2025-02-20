@@ -22,21 +22,21 @@ export function AdminPage() {
   const renderMapAndVoting = () => {
     if (poll.isLocationOptimized) {
       return (
-        <>
-          <VotingForm>
+        <VotingForm>
+          <div className="space-y-4">
             <ResponsiveResults />
-          </VotingForm>
-          <PollLocations />
-        </>
+            <PollLocations />
+          </div>
+        </VotingForm>
       );
     }
     return (
-      <>
-        <PollLocations />
-        <VotingForm>
+      <VotingForm>
+        <div className="space-y-4">
+          <PollLocations />
           <ResponsiveResults />
-        </VotingForm>
-      </>
+        </div>
+      </VotingForm>
     );
   };
 

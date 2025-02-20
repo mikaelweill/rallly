@@ -8,6 +8,7 @@ import {
 import React from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 
 import { NewParticipantForm } from "@/components/new-participant-modal";
 import { useParticipants } from "@/components/participants-provider";
@@ -20,6 +21,7 @@ import { Trans } from "@/components/trans";
 import { usePermissions } from "@/contexts/permissions";
 import { usePoll } from "@/contexts/poll";
 import { useRole } from "@/contexts/role";
+import { Button } from "@rallly/ui/button";
 
 const formSchema = z.object({
   mode: z.enum(["new", "edit", "view"]),
@@ -103,6 +105,7 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
   const { id: pollId, options, locations } = usePoll();
   const updateParticipant = useUpdateParticipantMutation();
   const { participants } = useParticipants();
+  const { t } = useTranslation();
 
   const { canAddNewParticipant, canEditParticipant } = usePermissions();
   const userAlreadyVoted = participants.some((participant) =>
@@ -135,6 +138,8 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
     },
   });
 
+  const mode = form.watch("mode");
+
   return (
     <FormProvider {...form}>
       <form
@@ -164,7 +169,45 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
             setIsNewParticipantModalOpen(true);
           }
         })}
-      />
+      >
+        {children}
+
+        {(mode === "new" || mode === "edit") && (
+          <div className="sticky left-[240px] flex w-[calc(100%-240px)] items-center justify-between gap-4 border-l border-t bg-gray-50 p-3">
+            <Button
+              onClick={() => {
+                form.reset({
+                  mode: "view",
+                  participantId: undefined,
+                  votes: options.map((option) => ({
+                    optionId: option.id,
+                  })),
+                  locationVotes: locations?.map((location) => ({
+                    locationId: location.id,
+                  })) ?? [],
+                });
+              }}
+            >
+              <Trans i18nKey="cancel" />
+            </Button>
+            <p className="hidden min-w-0 truncate text-sm md:block">
+              <Trans
+                i18nKey="saveInstruction"
+                values={{
+                  action: mode === "new" ? t("continue") : t("save"),
+                }}
+                components={{
+                  b: <strong className="font-semibold" />,
+                }}
+              />
+            </p>
+            <Button type="submit" variant="primary">
+              <Trans i18nKey={mode === "new" ? "continue" : "save"} />
+            </Button>
+          </div>
+        )}
+      </form>
+
       <Dialog
         open={isNewParticipantModalOpen}
         onOpenChange={setIsNewParticipantModalOpen}
@@ -198,7 +241,6 @@ export const VotingForm = ({ children }: React.PropsWithChildren) => {
           />
         </DialogContent>
       </Dialog>
-      {children}
     </FormProvider>
   );
 };

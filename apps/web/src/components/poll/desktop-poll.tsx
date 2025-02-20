@@ -295,7 +295,7 @@ const DesktopPoll: React.FunctionComponent = () => {
       </Card>
 
       {/* Times Section */}
-      <Card>
+      <Card className="flex-grow">
         <div ref={measureRef} style={{ height: expanded ? height : undefined }}>
           <div
             className={cn(
@@ -384,9 +384,6 @@ const DesktopPoll: React.FunctionComponent = () => {
           />
         </Card>
       )}
-
-      {/* Save Bar - Now outside both sections */}
-      <SaveBar mode={mode} />
     </div>
   );
 };
