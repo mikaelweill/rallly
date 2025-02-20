@@ -23,6 +23,7 @@ type TransportMode = 'DRIVING' | 'WALKING' | 'BICYCLING' | 'TRANSIT';
 
 export function PollLocations() {
     const poll = usePoll();
+    console.log('Poll locations:', poll.locations);
     const { t } = useTranslation();
     const [calculating, setCalculating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export function PollLocations() {
         libraries,
     });
 
-    if (!poll.locations || poll.locations.length === 0) {
+    if (!poll.isLocationOptimized && (!poll.locations || poll.locations.length === 0)) {
         return null;
     }
 
@@ -154,190 +155,207 @@ export function PollLocations() {
     return (
         <div className="rounded-lg border bg-white">
             <div className="space-y-2 p-4">
-                <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Locations</h3>
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            {isLoaded && (
-                                <div className="relative flex-1">
-                                    <Autocomplete
-                                        onLoad={setAutocomplete}
-                                        onPlaceChanged={() => {
-                                            const place = autocomplete?.getPlace();
-                                            if (place?.geometry?.location) {
-                                                setUserLocation({
-                                                    lat: place.geometry.location.lat(),
-                                                    lng: place.geometry.location.lng()
-                                                });
-                                                setStartAddress(place.formatted_address ?? "");
-                                                setError(null);
-                                            }
-                                        }}
-                                    >
-                                        <Input
-                                            type="text"
-                                            placeholder="Enter starting location..."
-                                            value={startAddress}
-                                            onChange={(e) => setStartAddress(e.target.value)}
-                                            className="w-full pr-24"
-                                        />
-                                    </Autocomplete>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleUseCurrentLocation}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2"
-                                    >
-                                        <Icon>
-                                            <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
-                                        </Icon>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <div className="flex gap-1 items-center rounded-md border bg-background p-1">
-                                <Button
-                                    variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setTransportMode('DRIVING')}
-                                    className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                >
-                                    <Icon>
-                                        <Car className="h-4 w-4" />
-                                    </Icon>
-                                </Button>
-                                <Button
-                                    variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setTransportMode('WALKING')}
-                                    className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                >
-                                    <Icon>
-                                        <PersonStanding className="h-4 w-4" />
-                                    </Icon>
-                                </Button>
-                                <Button
-                                    variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setTransportMode('BICYCLING')}
-                                    className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                >
-                                    <Icon>
-                                        <Bike className="h-4 w-4" />
-                                    </Icon>
-                                </Button>
-                                <Button
-                                    variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
-                                    size="sm"
-                                    onClick={() => setTransportMode('TRANSIT')}
-                                    className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                >
-                                    <Icon>
-                                        <Bus className="h-4 w-4" />
-                                    </Icon>
-                                </Button>
-                            </div>
-                            <Button
-                                variant="default"
-                                size="sm"
-                                onClick={handleCalculateDistances}
-                                disabled={calculating || !isLoaded || !startAddress}
-                                className="min-w-[100px]"
-                            >
-                                <Icon>
-                                    <NavigationIcon className="mr-2 h-4 w-4" />
-                                </Icon>
-                                {calculating ? "Calculating..." : "Calculate"}
-                            </Button>
+                {poll.isLocationOptimized ? (
+                    <div className="space-y-4">
+                        <Alert>
+                            <AlertDescription>
+                                Smart Location is enabled. Locations will be optimized based on participant preferences.
+                            </AlertDescription>
+                        </Alert>
+                        <div className="text-sm text-muted-foreground">
+                            Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
                         </div>
                     </div>
-                </div>
-                {error && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-                <div className="space-y-2">
-                    {poll.locations.map((location, index) => (
-                        <div
-                            key={location.id}
-                            className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer"
-                            onClick={() => handleLocationClick(location)}
-                        >
-                            <p className="text-muted-foreground truncate whitespace-nowrap text-sm">
-                                <Icon>
-                                    <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
-                                </Icon>
-                                <TruncatedLinkify>{`${index + 1}. ${location.address}`}</TruncatedLinkify>
-                            </p>
-                            {distances[location.id] && (
-                                <div className="flex items-center gap-3">
-                                    <div className="text-sm text-muted-foreground">
-                                        <span className="mr-2">{distances[location.id].distance}</span>
-                                        <span>({distances[location.id].duration})</span>
+                ) : (
+                    <>
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Locations</h3>
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    {isLoaded && (
+                                        <div className="relative flex-1">
+                                            <Autocomplete
+                                                onLoad={setAutocomplete}
+                                                onPlaceChanged={() => {
+                                                    const place = autocomplete?.getPlace();
+                                                    if (place?.geometry?.location) {
+                                                        setUserLocation({
+                                                            lat: place.geometry.location.lat(),
+                                                            lng: place.geometry.location.lng()
+                                                        });
+                                                        setStartAddress(place.formatted_address ?? "");
+                                                        setError(null);
+                                                    }
+                                                }}
+                                            >
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Enter starting location..."
+                                                    value={startAddress}
+                                                    onChange={(e) => setStartAddress(e.target.value)}
+                                                    className="w-full pr-24"
+                                                />
+                                            </Autocomplete>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleUseCurrentLocation}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2"
+                                            >
+                                                <Icon>
+                                                    <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
+                                                </Icon>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between gap-2">
+                                    <div className="flex gap-1 items-center rounded-md border bg-background p-1">
+                                        <Button
+                                            variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('DRIVING')}
+                                            className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <Car className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('WALKING')}
+                                            className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <PersonStanding className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('BICYCLING')}
+                                            className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <Bike className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
+                                        <Button
+                                            variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
+                                            size="sm"
+                                            onClick={() => setTransportMode('TRANSIT')}
+                                            className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                        >
+                                            <Icon>
+                                                <Bus className="h-4 w-4" />
+                                            </Icon>
+                                        </Button>
                                     </div>
                                     <Button
-                                        variant="ghost"
+                                        variant="default"
                                         size="sm"
-                                        className="h-7 px-2"
-                                        title="Open in Google Maps"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const baseUrl = "https://www.google.com/maps/dir/?api=1";
-                                            const origin = encodeURIComponent(startAddress);
-                                            const destination = encodeURIComponent(location.address);
-                                            const mode = transportMode.toLowerCase();
-                                            const url = `${baseUrl}&origin=${origin}&destination=${destination}&travelmode=${mode}`;
-                                            window.open(url, '_blank');
-                                        }}
+                                        onClick={handleCalculateDistances}
+                                        disabled={calculating || !isLoaded || !startAddress}
+                                        className="min-w-[100px]"
                                     >
                                         <Icon>
-                                            <Map className="h-4 w-4" />
+                                            <NavigationIcon className="mr-2 h-4 w-4" />
                                         </Icon>
+                                        {calculating ? "Calculating..." : "Calculate"}
                                     </Button>
                                 </div>
-                            )}
+                            </div>
                         </div>
-                    ))}
-                </div>
-                <div className="relative">
-                    <LocationMap
-                        address={poll.locations[0].address}
-                        locations={poll.locations}
-                        userLocation={userLocation}
-                        directions={directions}
-                        selectedLocationId={selectedLocationId}
-                        className="h-48 w-full"
-                        isLoaded={isLoaded}
-                        onMarkerClick={handleLocationClick}
-                    />
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        className="absolute bottom-2 right-2 bg-white"
-                        onClick={() => setIsMapModalOpen(true)}
-                    >
-                        <Icon>
-                            <Maximize2Icon className="h-4 w-4" />
-                        </Icon>
-                    </Button>
-                </div>
+                        {error && (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="space-y-2">
+                            {poll.locations.map((location, index) => (
+                                <div
+                                    key={location.id}
+                                    className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => handleLocationClick(location)}
+                                >
+                                    <p className="text-muted-foreground truncate whitespace-nowrap text-sm">
+                                        <Icon>
+                                            <MapPinIcon className="-mt-0.5 mr-1.5 inline-block" />
+                                        </Icon>
+                                        <TruncatedLinkify>{`${index + 1}. ${location.address}`}</TruncatedLinkify>
+                                    </p>
+                                    {distances[location.id] && (
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-sm text-muted-foreground">
+                                                <span className="mr-2">{distances[location.id].distance}</span>
+                                                <span>({distances[location.id].duration})</span>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 px-2"
+                                                title="Open in Google Maps"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const baseUrl = "https://www.google.com/maps/dir/?api=1";
+                                                    const origin = encodeURIComponent(startAddress);
+                                                    const destination = encodeURIComponent(location.address);
+                                                    const mode = transportMode.toLowerCase();
+                                                    const url = `${baseUrl}&origin=${origin}&destination=${destination}&travelmode=${mode}`;
+                                                    window.open(url, '_blank');
+                                                }}
+                                            >
+                                                <Icon>
+                                                    <Map className="h-4 w-4" />
+                                                </Icon>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <LocationMap
+                                address={poll.locations[0]?.address}
+                                locations={poll.locations}
+                                userLocation={userLocation}
+                                directions={directions}
+                                selectedLocationId={selectedLocationId}
+                                className="h-48 w-full"
+                                isLoaded={isLoaded}
+                                onMarkerClick={handleLocationClick}
+                            />
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="absolute bottom-2 right-2 bg-white"
+                                onClick={() => setIsMapModalOpen(true)}
+                            >
+                                <Icon>
+                                    <Maximize2Icon className="h-4 w-4" />
+                                </Icon>
+                            </Button>
+                        </div>
+                    </>
+                )}
             </div>
-            <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
-                <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[90vh] w-[90vw] !max-w-none !p-0 !rounded-lg shadow-2xl">
-                    <LocationMap
-                        address={poll.locations[0].address}
-                        locations={poll.locations}
-                        userLocation={userLocation}
-                        directions={directions}
-                        selectedLocationId={selectedLocationId}
-                        className="h-full w-full rounded-lg"
-                        isLoaded={isLoaded}
-                        onMarkerClick={handleLocationClick}
-                    />
-                </DialogContent>
-            </Dialog>
+            {!poll.isLocationOptimized && (
+                <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
+                    <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[90vh] w-[90vw] !max-w-none !p-0 !rounded-lg shadow-2xl">
+                        <LocationMap
+                            address={poll.locations[0]?.address}
+                            locations={poll.locations}
+                            userLocation={userLocation}
+                            directions={directions}
+                            selectedLocationId={selectedLocationId}
+                            className="h-full w-full rounded-lg"
+                            isLoaded={isLoaded}
+                            onMarkerClick={handleLocationClick}
+                        />
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 } 
