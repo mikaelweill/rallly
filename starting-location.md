@@ -7,7 +7,8 @@ The Starting Location feature allows participants to set their starting location
 
 ### 1. Visibility
 - Map should be visible to BOTH administrators and voters
-- Currently only visible to admins, needs to be added for voters
+- Map input sections (address bar, transport mode, etc.) should only be visible when in voting mode (new/edit)
+- Map input sections appear automatically when clicking the "+" to add/edit votes
 
 ### 2. Positioning
 For Non-Optimized Polls:
@@ -20,21 +21,20 @@ For Optimized Polls:
 
 ## User Experience Flow
 
-### 1. Initial State
+### 1. Initial State (View Mode)
 - Map section appears based on poll type:
   - Non-Optimized: ABOVE voting section
   - Optimized: BELOW voting section
-- Map is initially in view-only mode showing existing participant locations (if any)
+- Map is in view-only mode showing existing participant locations (if any)
 - No input fields are shown initially
-- Clear "+" button to start adding location
 
-### 2. Location Input Flow
-When user clicks "+" button:
-1. Location input section appears with:
+### 2. Location Input Flow (Edit/New Mode)
+When user clicks "+" to add/edit votes:
+1. Location input section appears automatically with:
    - Search bar with Google Places autocomplete
    - "Use current location" button
    - Map becomes interactive
-   - Clear "Cancel" and "Save" buttons
+   - Transport mode selection (for non-optimized polls)
 
 2. Pin Dropping Behavior:
    - Pin drops IMMEDIATELY when:
@@ -47,12 +47,8 @@ When user clicks "+" button:
 
 3. Confirmation Flow:
    - User reviews location with dropped pin
-   - Clicking "Save":
-     - Locks the address
-     - Adds numbered marker to map
-     - Adds entry to participant list
-     - Returns to view-only mode
-   - Clicking "Cancel":
+   - Location is saved along with votes when the voting form is submitted
+   - Clicking "Cancel" on the voting form:
      - Removes temporary pin
      - Clears input
      - Returns to view-only mode
@@ -62,8 +58,7 @@ When user clicks "+" button:
   - Numbered marker matching map
   - Participant name
   - Address
-- Clear "Edit" and "Remove" options
-- Map shows confirmed location with permanent marker style
+- Map returns to view-only mode
 
 ## UI Components
 
@@ -104,10 +99,10 @@ interface LocationInputProps {
 ## Integration with Voting
 
 ### Key Changes
-1. Move location section below voting section
-2. Only allow location input after clicking "+"
-3. Save location along with votes in single transaction
-4. Update UI to show clear connection between votes and location
+1. Tie map input visibility to voting form state
+2. Save location along with votes in single transaction
+3. Show/hide input sections based on voting form mode (new/edit/view)
+4. Position map based on poll optimization status
 
 ### Data Structure
 ```typescript
@@ -126,24 +121,22 @@ interface ParticipantSubmission {
 
 ## Implementation Phases
 
-### Phase 1: Map Visibility
-- [ ] Add map component to voter view (desktop-poll.tsx)
-- [ ] Ensure map visibility for both admin and voter views
+### Phase 1: Map Visibility & Position
+- [ ] Ensure map is visible in both admin and voter views
 - [ ] Position map correctly based on poll type:
   - Non-optimized: Above voting section
   - Optimized: Below voting section
 
-### Phase 2: UI Restructuring
-- [ ] Move map based on poll type
-- [ ] Implement view/edit modes for map
-- [ ] Add temporary pin state
-- [ ] Update marker styling
+### Phase 2: Voting Form Integration
+- [ ] Tie map input sections to voting form state
+- [ ] Show/hide input sections based on voting mode
+- [ ] Handle location state in voting form context
 
 ### Phase 3: Input Flow
-- [ ] Add "+" button trigger
 - [ ] Implement immediate pin dropping
-- [ ] Add confirmation flow
+- [ ] Add transport mode selection
 - [ ] Handle pin dragging
+- [ ] Update address field automatically
 
 ### Phase 4: Data Integration
 - [ ] Update mutation to handle location with votes
@@ -152,7 +145,7 @@ interface ParticipantSubmission {
 - [ ] Add loading states
 
 ## Notes
-- All location operations should be cancelable
+- All location operations should be cancelable via the voting form
 - Clear visual distinction between temporary and confirmed locations
 - Maintain existing vote data when adding/updating location
 - Consider mobile-friendly interactions for map
