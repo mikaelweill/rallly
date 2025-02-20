@@ -18,6 +18,28 @@ export function AdminPage() {
   const poll = usePoll();
   const isFinalized = poll.status === "finalized";
 
+  // Helper function to render map and voting form in correct order
+  const renderMapAndVoting = () => {
+    if (poll.isLocationOptimized) {
+      return (
+        <>
+          <VotingForm>
+            <ResponsiveResults />
+          </VotingForm>
+          <PollLocations />
+        </>
+      );
+    }
+    return (
+      <>
+        <PollLocations />
+        <VotingForm>
+          <ResponsiveResults />
+        </VotingForm>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-3 lg:space-y-4">
       <UnsubscribeAlert />
@@ -27,18 +49,10 @@ export function AdminPage() {
       {isFinalized ? (
         <>
           <ScheduledEvent />
-          <VotingForm>
-            <ResponsiveResults />
-          </VotingForm>
-          <PollLocations />
+          {renderMapAndVoting()}
         </>
       ) : (
-        <>
-          <PollLocations />
-          <VotingForm>
-            <ResponsiveResults />
-          </VotingForm>
-        </>
+        renderMapAndVoting()
       )}
       <Discussion />
       <PollFooter />

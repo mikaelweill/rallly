@@ -3,10 +3,27 @@
 ## Overview
 The Starting Location feature allows participants to set their starting location for optimized venue selection. This document outlines the improved UX flow and implementation details.
 
+## Map Display Rules
+
+### 1. Visibility
+- Map should be visible to BOTH administrators and voters
+- Currently only visible to admins, needs to be added for voters
+
+### 2. Positioning
+For Non-Optimized Polls:
+- Map appears ABOVE the voting section
+- This applies to both admin and voter views
+
+For Optimized Polls:
+- Map appears BELOW the voting section
+- This applies to both admin and voter views
+
 ## User Experience Flow
 
 ### 1. Initial State
-- Map section appears BELOW the voting section
+- Map section appears based on poll type:
+  - Non-Optimized: ABOVE voting section
+  - Optimized: BELOW voting section
 - Map is initially in view-only mode showing existing participant locations (if any)
 - No input fields are shown initially
 - Clear "+" button to start adding location
@@ -109,19 +126,26 @@ interface ParticipantSubmission {
 
 ## Implementation Phases
 
-### Phase 1: UI Restructuring
-- [ ] Move map below voting section
+### Phase 1: Map Visibility
+- [ ] Add map component to voter view (desktop-poll.tsx)
+- [ ] Ensure map visibility for both admin and voter views
+- [ ] Position map correctly based on poll type:
+  - Non-optimized: Above voting section
+  - Optimized: Below voting section
+
+### Phase 2: UI Restructuring
+- [ ] Move map based on poll type
 - [ ] Implement view/edit modes for map
 - [ ] Add temporary pin state
 - [ ] Update marker styling
 
-### Phase 2: Input Flow
+### Phase 3: Input Flow
 - [ ] Add "+" button trigger
 - [ ] Implement immediate pin dropping
 - [ ] Add confirmation flow
 - [ ] Handle pin dragging
 
-### Phase 3: Data Integration
+### Phase 4: Data Integration
 - [ ] Update mutation to handle location with votes
 - [ ] Add optimistic updates
 - [ ] Handle error states
@@ -132,4 +156,5 @@ interface ParticipantSubmission {
 - Clear visual distinction between temporary and confirmed locations
 - Maintain existing vote data when adding/updating location
 - Consider mobile-friendly interactions for map
-- Add proper error handling for geocoding failures 
+- Add proper error handling for geocoding failures
+- Ensure consistent behavior between admin and voter views 
