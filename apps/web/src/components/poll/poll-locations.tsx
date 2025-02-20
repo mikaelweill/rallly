@@ -35,6 +35,12 @@ export function PollLocations() {
     const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
     const [transportMode, setTransportMode] = useState<TransportMode>('DRIVING');
+    const [setLocations, setSetLocations] = useState<Array<{
+        id: string;
+        userName: string;
+        address: string;
+        location: { lat: number; lng: number };
+    }>>([]);
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
@@ -195,6 +201,20 @@ export function PollLocations() {
                         <div className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
                             Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
                         </div>
+                        {setLocations.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-medium">Participant Locations</h4>
+                                {setLocations.map((loc, index) => (
+                                    <div key={loc.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                            {index + 1}
+                                        </span>
+                                        <span>{loc.userName}</span>
+                                        <span className="truncate">{loc.address}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-2">
                                 {isLoaded && (
@@ -204,9 +224,8 @@ export function PollLocations() {
                                             onPlaceChanged={() => {
                                                 const place = autocomplete?.getPlace();
                                                 if (place?.geometry?.location) {
-                                                    // Just update the address, don't set location yet
                                                     setStartAddress(place.formatted_address ?? "");
-                                                    setTempLocation({
+                                                    setUserLocation({
                                                         lat: place.geometry.location.lat(),
                                                         lng: place.geometry.location.lng()
                                                     });
@@ -220,7 +239,7 @@ export function PollLocations() {
                                                 value={startAddress}
                                                 onChange={(e) => setStartAddress(e.target.value)}
                                                 className="w-full pr-24"
-                                                disabled={!!userLocation}
+                                                disabled={!!setLocations.find(loc => loc.userName === "You")}
                                             />
                                         </Autocomplete>
                                         <Button
@@ -236,16 +255,15 @@ export function PollLocations() {
                                                         });
                                                     });
 
-                                                    // Just store the position temporarily
-                                                    setTempLocation({
+                                                    const newLocation = {
                                                         lat: position.coords.latitude,
                                                         lng: position.coords.longitude
-                                                    });
+                                                    };
+                                                    setUserLocation(newLocation);
 
-                                                    // Get address from coordinates
                                                     const geocoder = new google.maps.Geocoder();
                                                     const result = await geocoder.geocode({
-                                                        location: { lat: position.coords.latitude, lng: position.coords.longitude }
+                                                        location: newLocation
                                                     });
                                                     if (result.results[0]) {
                                                         setStartAddress(result.results[0].formatted_address);
@@ -256,7 +274,7 @@ export function PollLocations() {
                                                 }
                                             }}
                                             className="absolute right-2 top-1/2 -translate-y-1/2"
-                                            disabled={!!userLocation}
+                                            disabled={!!setLocations.find(loc => loc.userName === "You")}
                                         >
                                             <Icon>
                                                 <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
@@ -265,22 +283,27 @@ export function PollLocations() {
                                     </div>
                                 )}
                                 <Button
-                                    variant={userLocation ? "outline" : "default"}
+                                    variant="default"
                                     size="sm"
                                     onClick={() => {
-                                        if (userLocation) {
-                                            // Clear the location
+                                        if (setLocations.find(loc => loc.userName === "You")) {
+                                            // Clear the set location
+                                            setSetLocations(prev => prev.filter(loc => loc.userName !== "You"));
                                             setUserLocation(undefined);
                                             setStartAddress("");
-                                            setTempLocation(undefined);
-                                        } else if (tempLocation) {
-                                            // Set the location from temp
-                                            setUserLocation(tempLocation);
+                                        } else if (userLocation && startAddress) {
+                                            // Add to set locations
+                                            setSetLocations(prev => [...prev, {
+                                                id: Math.random().toString(),
+                                                userName: "You", // This should come from user context
+                                                address: startAddress,
+                                                location: userLocation
+                                            }]);
                                         }
                                     }}
-                                    disabled={!startAddress && !tempLocation && !userLocation}
+                                    disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
                                 >
-                                    {userLocation ? (
+                                    {setLocations.find(loc => loc.userName === "You") ? (
                                         <>
                                             <Icon>
                                                 <XIcon className="mr-2 h-4 w-4" />
@@ -300,22 +323,28 @@ export function PollLocations() {
                             <div className="relative">
                                 <LocationMap
                                     address=""
-                                    locations={[]}
+                                    locations={setLocations.map((loc, index) => ({
+                                        id: loc.id,
+                                        address: loc.address,
+                                        lat: loc.location.lat,
+                                        lng: loc.location.lng
+                                    }))}
                                     className="h-48 w-full"
                                     isLoaded={isLoaded}
-                                    interactive={!userLocation}
-                                    userLocation={userLocation}
-                                    tempLocation={tempLocation}
+                                    interactive={!setLocations.find(loc => loc.userName === "You")}
+                                    userLocation={!setLocations.find(loc => loc.userName === "You") ? userLocation : undefined}
+                                    tempLocation={!setLocations.find(loc => loc.userName === "You") && userLocation ? userLocation : undefined}
                                     onLocationChange={async (_, latLng) => {
-                                        setTempLocation(latLng);
-                                        // Get address from coordinates
-                                        const geocoder = new google.maps.Geocoder();
-                                        const result = await geocoder.geocode({
-                                            location: latLng
-                                        });
-                                        if (result.results[0]) {
-                                            setStartAddress(result.results[0].formatted_address);
-                                            setError(null);
+                                        if (!setLocations.find(loc => loc.userName === "You")) {
+                                            setUserLocation(latLng);
+                                            const geocoder = new google.maps.Geocoder();
+                                            const result = await geocoder.geocode({
+                                                location: latLng
+                                            });
+                                            if (result.results[0]) {
+                                                setStartAddress(result.results[0].formatted_address);
+                                                setError(null);
+                                            }
                                         }
                                     }}
                                 />
