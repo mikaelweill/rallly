@@ -1,13 +1,13 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign } from "lucide-react";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign, XIcon } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@rallly/ui/alert";
 import { Input } from "@rallly/ui/input";
 import { Dialog, DialogContent } from "@rallly/ui/dialog";
 
-import { LocationMap } from "@/components/location-map";
+import { LocationMap, type Location } from "@/components/location-map";
 import TruncatedLinkify from "@/components/poll/truncated-linkify";
 import { usePoll } from "@/contexts/poll";
 import { useTranslation } from "@/i18n/client";
@@ -27,11 +27,12 @@ export function PollLocations() {
     const [calculating, setCalculating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [distances, setDistances] = useState<Record<string, DistanceInfo>>({});
-    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
     const [startAddress, setStartAddress] = useState("");
+    const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-    const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-    const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+    const [directions, setDirections] = useState<google.maps.DirectionsResult | undefined>(undefined);
+    const [selectedLocationId, setSelectedLocationId] = useState<string | undefined>(undefined);
     const [isMapModalOpen, setIsMapModalOpen] = useState(false);
     const [transportMode, setTransportMode] = useState<TransportMode>('DRIVING');
 
@@ -39,6 +40,15 @@ export function PollLocations() {
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
         libraries,
     });
+
+    // Convert poll locations to Location type
+    const pollLocations: Location[] = poll.locations?.map(loc => ({
+        id: loc.id,
+        address: loc.address,
+        placeId: loc.placeId || undefined,
+        lat: loc.lat || undefined,
+        lng: loc.lng || undefined
+    })) ?? [];
 
     if (!poll.isLocationOptimized && (!poll.locations || poll.locations.length === 0)) {
         return null;
@@ -72,8 +82,8 @@ export function PollLocations() {
         }
     };
 
-    const calculateRoute = useCallback(async (destination: { lat?: number; lng?: number }) => {
-        if (!userLocation || !destination.lat || !destination.lng) return null;
+    const calculateRoute = useCallback(async (destination: { lat?: number | null; lng?: number | null }) => {
+        if (!userLocation || !destination.lat || !destination.lng) return undefined;
 
         const directionsService = new google.maps.DirectionsService();
         try {
@@ -85,7 +95,7 @@ export function PollLocations() {
             return result;
         } catch (error) {
             console.error("Error calculating route:", error);
-            return null;
+            return undefined;
         }
     }, [userLocation, transportMode]);
 
@@ -133,7 +143,7 @@ export function PollLocations() {
         }
     };
 
-    const handleLocationClick = async (location: typeof poll.locations[0]) => {
+    const handleLocationClick = async (location: Location) => {
         if (!userLocation) {
             setError("Please set a starting location first");
             return;
@@ -143,9 +153,12 @@ export function PollLocations() {
             return;
         }
 
-        setError(null); // Clear any previous error
+        setError(null);
         setSelectedLocationId(location.id);
-        const route = await calculateRoute(location);
+        const route = await calculateRoute({
+            lat: location.lat,
+            lng: location.lng
+        });
         if (route) {
             setDirections(route);
         }
@@ -167,6 +180,7 @@ export function PollLocations() {
                                 )}
                                 {poll.venuePreferences?.priceLevel && (
                                     <div className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium">
+                                        <Icon><DollarSign className="mr-1 h-3.5 w-3.5" /></Icon>
                                         Price: {"$".repeat(poll.venuePreferences.priceLevel)}
                                     </div>
                                 )}
@@ -180,6 +194,132 @@ export function PollLocations() {
                         </div>
                         <div className="rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
                             Once participants share their locations, optimal meeting spots will be suggested based on travel time and preferences.
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-2">
+                                {isLoaded && (
+                                    <div className="relative flex-1">
+                                        <Autocomplete
+                                            onLoad={setAutocomplete}
+                                            onPlaceChanged={() => {
+                                                const place = autocomplete?.getPlace();
+                                                if (place?.geometry?.location) {
+                                                    // Just update the address, don't set location yet
+                                                    setStartAddress(place.formatted_address ?? "");
+                                                    setTempLocation({
+                                                        lat: place.geometry.location.lat(),
+                                                        lng: place.geometry.location.lng()
+                                                    });
+                                                    setError(null);
+                                                }
+                                            }}
+                                        >
+                                            <Input
+                                                type="text"
+                                                placeholder="Enter your starting location..."
+                                                value={startAddress}
+                                                onChange={(e) => setStartAddress(e.target.value)}
+                                                className="w-full pr-24"
+                                                disabled={!!userLocation}
+                                            />
+                                        </Autocomplete>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={async () => {
+                                                try {
+                                                    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                                            enableHighAccuracy: true,
+                                                            timeout: 5000,
+                                                            maximumAge: 0
+                                                        });
+                                                    });
+
+                                                    // Just store the position temporarily
+                                                    setTempLocation({
+                                                        lat: position.coords.latitude,
+                                                        lng: position.coords.longitude
+                                                    });
+
+                                                    // Get address from coordinates
+                                                    const geocoder = new google.maps.Geocoder();
+                                                    const result = await geocoder.geocode({
+                                                        location: { lat: position.coords.latitude, lng: position.coords.longitude }
+                                                    });
+                                                    if (result.results[0]) {
+                                                        setStartAddress(result.results[0].formatted_address);
+                                                        setError(null);
+                                                    }
+                                                } catch (error) {
+                                                    setError("Could not get your current location. Please enter an address manually.");
+                                                }
+                                            }}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2"
+                                            disabled={!!userLocation}
+                                        >
+                                            <Icon>
+                                                <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
+                                            </Icon>
+                                        </Button>
+                                    </div>
+                                )}
+                                <Button
+                                    variant={userLocation ? "outline" : "default"}
+                                    size="sm"
+                                    onClick={() => {
+                                        if (userLocation) {
+                                            // Clear the location
+                                            setUserLocation(undefined);
+                                            setStartAddress("");
+                                            setTempLocation(undefined);
+                                        } else if (tempLocation) {
+                                            // Set the location from temp
+                                            setUserLocation(tempLocation);
+                                        }
+                                    }}
+                                    disabled={!startAddress && !tempLocation && !userLocation}
+                                >
+                                    {userLocation ? (
+                                        <>
+                                            <Icon>
+                                                <XIcon className="mr-2 h-4 w-4" />
+                                            </Icon>
+                                            Clear
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon>
+                                                <MapPinIcon className="mr-2 h-4 w-4" />
+                                            </Icon>
+                                            Set Location
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                            <div className="relative">
+                                <LocationMap
+                                    address=""
+                                    locations={[]}
+                                    className="h-48 w-full"
+                                    isLoaded={isLoaded}
+                                    interactive={!userLocation}
+                                    userLocation={userLocation}
+                                    tempLocation={tempLocation}
+                                    onLocationChange={async (_, latLng) => {
+                                        setTempLocation(latLng);
+                                        // Get address from coordinates
+                                        const geocoder = new google.maps.Geocoder();
+                                        const result = await geocoder.geocode({
+                                            location: latLng
+                                        });
+                                        if (result.results[0]) {
+                                            setStartAddress(result.results[0].formatted_address);
+                                            setError(null);
+                                        }
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 ) : (
@@ -357,20 +497,16 @@ export function PollLocations() {
                 )}
             </div>
             {!poll.isLocationOptimized && (
-                <Dialog open={isMapModalOpen} onOpenChange={setIsMapModalOpen}>
-                    <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[90vh] w-[90vw] !max-w-none !p-0 !rounded-lg shadow-2xl">
-                        <LocationMap
-                            address={poll.locations[0]?.address}
-                            locations={poll.locations}
-                            userLocation={userLocation}
-                            directions={directions}
-                            selectedLocationId={selectedLocationId}
-                            className="h-full w-full rounded-lg"
-                            isLoaded={isLoaded}
-                            onMarkerClick={handleLocationClick}
-                        />
-                    </DialogContent>
-                </Dialog>
+                <LocationMap
+                    address={poll.locations[0]?.address ?? ""}
+                    locations={pollLocations}
+                    userLocation={userLocation}
+                    directions={directions || undefined}
+                    selectedLocationId={selectedLocationId || undefined}
+                    className="h-48 w-full"
+                    isLoaded={isLoaded}
+                    onMarkerClick={handleLocationClick}
+                />
             )}
         </div>
     );

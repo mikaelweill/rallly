@@ -1,7 +1,7 @@
 import { GoogleMap, Marker, DirectionsRenderer } from "@react-google-maps/api";
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
 
-interface Location {
+export interface Location {
     id: string;
     address: string;
     placeId?: string;
@@ -17,6 +17,7 @@ interface LocationMapProps {
     onLocationChange?: (address: string, latLng: { lat: number; lng: number }) => void;
     isLoaded: boolean;
     userLocation?: { lat: number; lng: number };
+    tempLocation?: { lat: number; lng: number } | null;
     directions?: google.maps.DirectionsResult | null;
     selectedLocationId?: string | null;
     onMarkerClick?: (location: Location) => void;
@@ -30,6 +31,7 @@ export function LocationMap({
     onLocationChange,
     isLoaded,
     userLocation,
+    tempLocation,
     directions,
     selectedLocationId,
     onMarkerClick,
@@ -88,9 +90,11 @@ export function LocationMap({
         }
 
         if (hasValidPoints) {
-            mapRef.current.fitBounds(bounds, {
-                padding: 50
-            });
+            mapRef.current.fitBounds(bounds);
+            const currentZoom = mapRef.current.getZoom();
+            if (currentZoom && currentZoom > 15) {
+                mapRef.current.setZoom(15);
+            }
         }
     }, [locations, userLocation, isLoaded]);
 
@@ -191,22 +195,34 @@ export function LocationMap({
                         />
                     ) : null
                 ))}
-                {userLocation && (
+                {tempLocation && !userLocation && (
                     <Marker
-                        position={userLocation}
+                        position={tempLocation}
                         icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             scale: 8,
-                            fillColor: "#4F46E5",
-                            fillOpacity: 1,
+                            fillColor: "#EF4444",
+                            fillOpacity: 0.6,
                             strokeColor: "#ffffff",
                             strokeWeight: 2,
                         }}
                     />
                 )}
+                {userLocation && !interactive && (
+                    <Marker
+                        position={userLocation}
+                        label={{
+                            text: `${locations.length + 1}`,
+                            color: 'white',
+                            fontFamily: 'system-ui',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                        }}
+                    />
+                )}
                 {(directions || localDirections) && (
                     <DirectionsRenderer
-                        directions={directions || localDirections}
+                        directions={directions || localDirections || undefined}
                         options={{
                             suppressMarkers: true,
                             polylineOptions: {
