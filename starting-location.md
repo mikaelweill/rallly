@@ -19,6 +19,35 @@ For Optimized Polls:
 - Map appears BELOW the voting section
 - This applies to both admin and voter views
 
+## Implementation Status
+
+### Phase 1: Map Visibility & Position ✅
+- [x] Ensure map is visible in admin view
+- [ ] Add map to voter view
+- [x] Position map correctly based on poll type:
+  - Non-optimized: Above voting section
+  - Optimized: Below voting section
+- [x] Integrate map with voting form structure
+  - Map is now properly nested inside VotingForm
+  - Save/Cancel buttons appear below both map and voting sections
+
+### Phase 2: Voting Form Integration (In Progress)
+- [x] Tie map input sections to voting form state
+- [x] Show/hide input sections based on voting mode
+- [ ] Handle location state in voting form context
+
+### Phase 3: Input Flow (Pending)
+- [ ] Implement immediate pin dropping
+- [ ] Add transport mode selection
+- [ ] Handle pin dragging
+- [ ] Update address field automatically
+
+### Phase 4: Data Integration (Pending)
+- [ ] Update mutation to handle location with votes
+- [ ] Add optimistic updates
+- [ ] Handle error states
+- [ ] Add loading states
+
 ## User Experience Flow
 
 ### 1. Initial State (View Mode)
@@ -59,6 +88,20 @@ When user clicks "+" to add/edit votes:
   - Participant name
   - Address
 - Map returns to view-only mode
+
+## Next Steps
+1. Add map to voter view using the same integration pattern as admin view
+2. Complete the voting form integration for location data
+3. Implement the input flow with pin dropping functionality
+4. Add data integration with proper error handling
+
+## Notes
+- All location operations should be cancelable via the voting form
+- Clear visual distinction between temporary and confirmed locations
+- Maintain existing vote data when adding/updating location
+- Consider mobile-friendly interactions for map
+- Add proper error handling for geocoding failures
+- Ensure consistent behavior between admin and voter views
 
 ## UI Components
 
@@ -117,37 +160,4 @@ interface ParticipantSubmission {
     address: string;
   };
 }
-```
-
-## Implementation Phases
-
-### Phase 1: Map Visibility & Position
-- [ ] Ensure map is visible in both admin and voter views
-- [ ] Position map correctly based on poll type:
-  - Non-optimized: Above voting section
-  - Optimized: Below voting section
-
-### Phase 2: Voting Form Integration
-- [ ] Tie map input sections to voting form state
-- [ ] Show/hide input sections based on voting mode
-- [ ] Handle location state in voting form context
-
-### Phase 3: Input Flow
-- [ ] Implement immediate pin dropping
-- [ ] Add transport mode selection
-- [ ] Handle pin dragging
-- [ ] Update address field automatically
-
-### Phase 4: Data Integration
-- [ ] Update mutation to handle location with votes
-- [ ] Add optimistic updates
-- [ ] Handle error states
-- [ ] Add loading states
-
-## Notes
-- All location operations should be cancelable via the voting form
-- Clear visual distinction between temporary and confirmed locations
-- Maintain existing vote data when adding/updating location
-- Consider mobile-friendly interactions for map
-- Add proper error handling for geocoding failures
-- Ensure consistent behavior between admin and voter views 
+``` 

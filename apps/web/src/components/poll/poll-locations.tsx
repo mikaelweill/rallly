@@ -11,6 +11,7 @@ import { LocationMap, type Location } from "@/components/location-map";
 import TruncatedLinkify from "@/components/poll/truncated-linkify";
 import { usePoll } from "@/contexts/poll";
 import { useTranslation } from "@/i18n/client";
+import { useVotingForm } from "@/components/poll/voting-form";
 
 const libraries: ["places"] = ["places"];
 
@@ -24,6 +25,10 @@ type TransportMode = 'DRIVING' | 'WALKING' | 'BICYCLING' | 'TRANSIT';
 export function PollLocations() {
     const poll = usePoll();
     const { t } = useTranslation();
+    const votingForm = useVotingForm();
+    const mode = votingForm.watch("mode");
+    const isEditing = mode === "new" || mode === "edit";
+
     const [calculating, setCalculating] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [distances, setDistances] = useState<Record<string, DistanceInfo>>({});
@@ -216,110 +221,112 @@ export function PollLocations() {
                             </div>
                         )}
                         <div className="flex flex-col gap-4">
-                            <div className="flex items-center gap-2">
-                                {isLoaded && (
-                                    <div className="relative flex-1">
-                                        <Autocomplete
-                                            onLoad={setAutocomplete}
-                                            onPlaceChanged={() => {
-                                                const place = autocomplete?.getPlace();
-                                                if (place?.geometry?.location) {
-                                                    setStartAddress(place.formatted_address ?? "");
-                                                    setUserLocation({
-                                                        lat: place.geometry.location.lat(),
-                                                        lng: place.geometry.location.lng()
-                                                    });
-                                                    setError(null);
-                                                }
-                                            }}
-                                        >
-                                            <Input
-                                                type="text"
-                                                placeholder="Enter your starting location..."
-                                                value={startAddress}
-                                                onChange={(e) => setStartAddress(e.target.value)}
-                                                className="w-full pr-24"
-                                                disabled={!!setLocations.find(loc => loc.userName === "You")}
-                                            />
-                                        </Autocomplete>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={async () => {
-                                                try {
-                                                    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                                                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                                                            enableHighAccuracy: true,
-                                                            timeout: 5000,
-                                                            maximumAge: 0
+                            {isEditing && (
+                                <div className="flex items-center gap-2">
+                                    {isLoaded && (
+                                        <div className="relative flex-1">
+                                            <Autocomplete
+                                                onLoad={setAutocomplete}
+                                                onPlaceChanged={() => {
+                                                    const place = autocomplete?.getPlace();
+                                                    if (place?.geometry?.location) {
+                                                        setStartAddress(place.formatted_address ?? "");
+                                                        setUserLocation({
+                                                            lat: place.geometry.location.lat(),
+                                                            lng: place.geometry.location.lng()
                                                         });
-                                                    });
-
-                                                    const newLocation = {
-                                                        lat: position.coords.latitude,
-                                                        lng: position.coords.longitude
-                                                    };
-                                                    setUserLocation(newLocation);
-
-                                                    const geocoder = new google.maps.Geocoder();
-                                                    const result = await geocoder.geocode({
-                                                        location: newLocation
-                                                    });
-                                                    if (result.results[0]) {
-                                                        setStartAddress(result.results[0].formatted_address);
                                                         setError(null);
                                                     }
-                                                } catch (error) {
-                                                    setError("Could not get your current location. Please enter an address manually.");
-                                                }
-                                            }}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2"
-                                            disabled={!!setLocations.find(loc => loc.userName === "You")}
-                                        >
-                                            <Icon>
-                                                <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
-                                            </Icon>
-                                        </Button>
-                                    </div>
-                                )}
-                                <Button
-                                    variant="default"
-                                    size="sm"
-                                    onClick={() => {
-                                        if (setLocations.find(loc => loc.userName === "You")) {
-                                            // Clear the set location
-                                            setSetLocations(prev => prev.filter(loc => loc.userName !== "You"));
-                                            setUserLocation(undefined);
-                                            setStartAddress("");
-                                        } else if (userLocation && startAddress) {
-                                            // Add to set locations
-                                            setSetLocations(prev => [...prev, {
-                                                id: Math.random().toString(),
-                                                userName: "You", // This should come from user context
-                                                address: startAddress,
-                                                location: userLocation
-                                            }]);
-                                        }
-                                    }}
-                                    disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
-                                >
-                                    {setLocations.find(loc => loc.userName === "You") ? (
-                                        <>
-                                            <Icon>
-                                                <XIcon className="mr-2 h-4 w-4" />
-                                            </Icon>
-                                            Clear
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Icon>
-                                                <MapPinIcon className="mr-2 h-4 w-4" />
-                                            </Icon>
-                                            Set Location
-                                        </>
+                                                }}
+                                            >
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Enter your starting location..."
+                                                    value={startAddress}
+                                                    onChange={(e) => setStartAddress(e.target.value)}
+                                                    className="w-full pr-24"
+                                                    disabled={!!setLocations.find(loc => loc.userName === "You")}
+                                                />
+                                            </Autocomplete>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                                            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                                                enableHighAccuracy: true,
+                                                                timeout: 5000,
+                                                                maximumAge: 0
+                                                            });
+                                                        });
+
+                                                        const newLocation = {
+                                                            lat: position.coords.latitude,
+                                                            lng: position.coords.longitude
+                                                        };
+                                                        setUserLocation(newLocation);
+
+                                                        const geocoder = new google.maps.Geocoder();
+                                                        const result = await geocoder.geocode({
+                                                            location: newLocation
+                                                        });
+                                                        if (result.results[0]) {
+                                                            setStartAddress(result.results[0].formatted_address);
+                                                            setError(null);
+                                                        }
+                                                    } catch (error) {
+                                                        setError("Could not get your current location. Please enter an address manually.");
+                                                    }
+                                                }}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2"
+                                                disabled={!!setLocations.find(loc => loc.userName === "You")}
+                                            >
+                                                <Icon>
+                                                    <CrosshairIcon className="h-4 w-4 text-muted-foreground" />
+                                                </Icon>
+                                            </Button>
+                                        </div>
                                     )}
-                                </Button>
-                            </div>
+                                    <Button
+                                        variant="default"
+                                        size="sm"
+                                        onClick={() => {
+                                            if (setLocations.find(loc => loc.userName === "You")) {
+                                                // Clear the set location
+                                                setSetLocations(prev => prev.filter(loc => loc.userName !== "You"));
+                                                setUserLocation(undefined);
+                                                setStartAddress("");
+                                            } else if (userLocation && startAddress) {
+                                                // Add to set locations
+                                                setSetLocations(prev => [...prev, {
+                                                    id: Math.random().toString(),
+                                                    userName: "You", // This should come from user context
+                                                    address: startAddress,
+                                                    location: userLocation
+                                                }]);
+                                            }
+                                        }}
+                                        disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
+                                    >
+                                        {setLocations.find(loc => loc.userName === "You") ? (
+                                            <>
+                                                <Icon>
+                                                    <XIcon className="mr-2 h-4 w-4" />
+                                                </Icon>
+                                                Clear
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Icon>
+                                                    <MapPinIcon className="mr-2 h-4 w-4" />
+                                                </Icon>
+                                                Set Location
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
                             <div className="relative">
                                 <LocationMap
                                     address=""
@@ -331,11 +338,11 @@ export function PollLocations() {
                                     }))}
                                     className="h-48 w-full"
                                     isLoaded={isLoaded}
-                                    interactive={!setLocations.find(loc => loc.userName === "You")}
-                                    userLocation={!setLocations.find(loc => loc.userName === "You") ? userLocation : undefined}
-                                    tempLocation={!setLocations.find(loc => loc.userName === "You") && userLocation ? userLocation : undefined}
+                                    interactive={isEditing && !setLocations.find(loc => loc.userName === "You")}
+                                    userLocation={isEditing && !setLocations.find(loc => loc.userName === "You") ? userLocation : undefined}
+                                    tempLocation={isEditing && !setLocations.find(loc => loc.userName === "You") && userLocation ? userLocation : undefined}
                                     onLocationChange={async (_, latLng) => {
-                                        if (!setLocations.find(loc => loc.userName === "You")) {
+                                        if (isEditing && !setLocations.find(loc => loc.userName === "You")) {
                                             setUserLocation(latLng);
                                             const geocoder = new google.maps.Geocoder();
                                             const result = await geocoder.geocode({
@@ -347,6 +354,7 @@ export function PollLocations() {
                                             }
                                         }
                                     }}
+                                    showUserLocationAsDot={!poll.isLocationOptimized}
                                 />
                             </div>
                         </div>
@@ -356,6 +364,7 @@ export function PollLocations() {
                         <div className="space-y-4">
                             <h3 className="text-sm font-medium">Locations</h3>
                             <div className="flex flex-col gap-2">
+                                {/* For non-optimized polls, always show the address bar */}
                                 <div className="flex items-center gap-2">
                                     {isLoaded && (
                                         <div className="relative flex-1">
@@ -394,62 +403,65 @@ export function PollLocations() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex gap-1 items-center rounded-md border bg-background p-1">
+                                {/* Transport mode and calculate buttons only shown in edit mode */}
+                                {isEditing && (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex gap-1 items-center rounded-md border bg-background p-1">
+                                            <Button
+                                                variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setTransportMode('DRIVING')}
+                                                className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                            >
+                                                <Icon>
+                                                    <Car className="h-4 w-4" />
+                                                </Icon>
+                                            </Button>
+                                            <Button
+                                                variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setTransportMode('WALKING')}
+                                                className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                            >
+                                                <Icon>
+                                                    <PersonStanding className="h-4 w-4" />
+                                                </Icon>
+                                            </Button>
+                                            <Button
+                                                variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setTransportMode('BICYCLING')}
+                                                className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                            >
+                                                <Icon>
+                                                    <Bike className="h-4 w-4" />
+                                                </Icon>
+                                            </Button>
+                                            <Button
+                                                variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
+                                                size="sm"
+                                                onClick={() => setTransportMode('TRANSIT')}
+                                                className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                            >
+                                                <Icon>
+                                                    <Bus className="h-4 w-4" />
+                                                </Icon>
+                                            </Button>
+                                        </div>
                                         <Button
-                                            variant={transportMode === 'DRIVING' ? 'default' : 'ghost'}
+                                            variant="default"
                                             size="sm"
-                                            onClick={() => setTransportMode('DRIVING')}
-                                            className={`h-7 ${transportMode === 'DRIVING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
+                                            onClick={handleCalculateDistances}
+                                            disabled={calculating || !isLoaded || !startAddress}
+                                            className="min-w-[100px]"
                                         >
                                             <Icon>
-                                                <Car className="h-4 w-4" />
+                                                <NavigationIcon className="mr-2 h-4 w-4" />
                                             </Icon>
-                                        </Button>
-                                        <Button
-                                            variant={transportMode === 'WALKING' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setTransportMode('WALKING')}
-                                            className={`h-7 ${transportMode === 'WALKING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                        >
-                                            <Icon>
-                                                <PersonStanding className="h-4 w-4" />
-                                            </Icon>
-                                        </Button>
-                                        <Button
-                                            variant={transportMode === 'BICYCLING' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setTransportMode('BICYCLING')}
-                                            className={`h-7 ${transportMode === 'BICYCLING' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                        >
-                                            <Icon>
-                                                <Bike className="h-4 w-4" />
-                                            </Icon>
-                                        </Button>
-                                        <Button
-                                            variant={transportMode === 'TRANSIT' ? 'default' : 'ghost'}
-                                            size="sm"
-                                            onClick={() => setTransportMode('TRANSIT')}
-                                            className={`h-7 ${transportMode === 'TRANSIT' ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-muted'}`}
-                                        >
-                                            <Icon>
-                                                <Bus className="h-4 w-4" />
-                                            </Icon>
+                                            {calculating ? "Calculating..." : "Calculate"}
                                         </Button>
                                     </div>
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        onClick={handleCalculateDistances}
-                                        disabled={calculating || !isLoaded || !startAddress}
-                                        className="min-w-[100px]"
-                                    >
-                                        <Icon>
-                                            <NavigationIcon className="mr-2 h-4 w-4" />
-                                        </Icon>
-                                        {calculating ? "Calculating..." : "Calculate"}
-                                    </Button>
-                                </div>
+                                )}
                             </div>
                         </div>
                         {error && (
@@ -509,7 +521,9 @@ export function PollLocations() {
                                 selectedLocationId={selectedLocationId}
                                 className="h-48 w-full"
                                 isLoaded={isLoaded}
+                                interactive={isEditing}
                                 onMarkerClick={handleLocationClick}
+                                showUserLocationAsDot={!poll.isLocationOptimized}
                             />
                             <Button
                                 size="sm"
@@ -527,4 +541,4 @@ export function PollLocations() {
             </div>
         </div>
     );
-} 
+}

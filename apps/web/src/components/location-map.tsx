@@ -21,6 +21,7 @@ interface LocationMapProps {
     directions?: google.maps.DirectionsResult | null;
     selectedLocationId?: string | null;
     onMarkerClick?: (location: Location) => void;
+    showUserLocationAsDot?: boolean;
 }
 
 export function LocationMap({
@@ -35,6 +36,7 @@ export function LocationMap({
     directions,
     selectedLocationId,
     onMarkerClick,
+    showUserLocationAsDot = false,
 }: LocationMapProps) {
     const geocoder = useMemo(() => isLoaded ? new google.maps.Geocoder() : null, [isLoaded]);
     const mapRef = useRef<google.maps.Map | null>(null);
@@ -211,13 +213,21 @@ export function LocationMap({
                 {userLocation && !interactive && (
                     <Marker
                         position={userLocation}
-                        label={{
+                        icon={showUserLocationAsDot ? {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: "#4285F4", // Google Maps blue
+                            fillOpacity: 1,
+                            strokeColor: "#ffffff",
+                            strokeWeight: 2,
+                        } : undefined}
+                        label={!showUserLocationAsDot ? {
                             text: `${locations.length + 1}`,
                             color: 'white',
                             fontFamily: 'system-ui',
                             fontSize: '14px',
                             fontWeight: 'bold'
-                        }}
+                        } : undefined}
                     />
                 )}
                 {(directions || localDirections) && (
