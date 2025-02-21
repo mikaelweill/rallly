@@ -26,7 +26,7 @@ export function AdminPage() {
         <VotingForm>
           <div className="space-y-4">
             <ResponsiveResults />
-            <StartingLocationsSummary />
+
           </div>
         </VotingForm>
       );
