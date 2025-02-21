@@ -27,7 +27,6 @@ export function AdminPage() {
           <div className="space-y-4">
             <ResponsiveResults />
             <StartingLocationsSummary />
-            <PollLocations />
           </div>
         </VotingForm>
       );
@@ -35,7 +34,6 @@ export function AdminPage() {
     return (
       <VotingForm>
         <div className="space-y-4">
-          <PollLocations />
           <ResponsiveResults />
         </div>
       </VotingForm>
