@@ -10,6 +10,7 @@ type Location = {
 type Participant = {
     location: Location;
     transportMode: string;
+    responseWeight: number; // 0 for no, 0.5 for maybe, 1 for yes
 };
 
 type VenueMetrics = {
@@ -75,7 +76,7 @@ export class VenueOptimizer {
         };
     }
 
-    private async searchVenues(centroid: { lat: number; lng: number }): Promise<google.maps.places.PlaceResult[]> {
+    private async searchVenues(centroid: { lat: number; lng: number }, optimizationType: "eta" | "distance"): Promise<google.maps.places.PlaceResult[]> {
         if (!this.placesService) {
             await this.initServices();
             if (!this.placesService) {
@@ -84,14 +85,16 @@ export class VenueOptimizer {
         }
 
         return new Promise((resolve, reject) => {
-            // Note: When using rankBy: DISTANCE, we cannot specify radius
             const request: google.maps.places.PlaceSearchRequest = {
                 location: new google.maps.LatLng(centroid.lat, centroid.lng),
                 type: this.preferences.type || "restaurant",
-                rankBy: google.maps.places.RankBy.DISTANCE // This will sort by distance from centroid
+                // For distance optimization, rank by distance. For ETA, use radius to get all venues within range
+                ...(optimizationType === "distance"
+                    ? { rankBy: google.maps.places.RankBy.DISTANCE }
+                    : { radius: 3000 }) // 3km radius for ETA optimization
             };
 
-            this.placesService!.nearbySearch(request, (results, status) => {
+            this.placesService!.nearbySearch(request, async (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results) {
                     // Filter results by rating and price level
                     const filtered = results.filter(place => {
@@ -108,9 +111,13 @@ export class VenueOptimizer {
                         return true;
                     });
 
-                    // Take the first 3 places that pass our filters
-                    // They will already be sorted by distance since we used rankBy: DISTANCE
-                    resolve(filtered.slice(0, 3));
+                    if (optimizationType === "distance") {
+                        // For distance, we already have them sorted, just take top 3
+                        resolve(filtered.slice(0, 3));
+                    } else {
+                        // For ETA, we'll calculate ETAs for all venues within radius and sort later
+                        resolve(filtered);
+                    }
                 } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
                     resolve([]);
                 } else {
@@ -118,6 +125,10 @@ export class VenueOptimizer {
                 }
             });
         });
+    }
+
+    private formatNumber(value: number): number {
+        return Number(value.toFixed(2));
     }
 
     private async calculateMetrics(
@@ -151,14 +162,24 @@ export class VenueOptimizer {
 
         if (optimizationType === "distance") {
             const distances = values.map(element => element.distance.value / 1000); // Convert to km
-            metrics.minDistance = Math.min(...distances);
-            metrics.maxDistance = Math.max(...distances);
-            metrics.avgDistance = distances.reduce((a, b) => a + b, 0) / distances.length;
+            metrics.minDistance = this.formatNumber(Math.min(...distances));
+            metrics.maxDistance = this.formatNumber(Math.max(...distances));
+
+            // Calculate weighted average distance
+            const totalWeight = this.participants.reduce((sum, p) => sum + p.responseWeight, 0);
+            const weightedSum = distances.reduce((sum, distance, index) =>
+                sum + (distance * this.participants[index].responseWeight), 0);
+            metrics.avgDistance = this.formatNumber(totalWeight > 0 ? weightedSum / totalWeight : 0);
         } else {
             const durations = values.map(element => element.duration.value / 60); // Convert to minutes
-            metrics.minEta = Math.min(...durations);
-            metrics.maxEta = Math.max(...durations);
-            metrics.avgEta = durations.reduce((a, b) => a + b, 0) / durations.length;
+            metrics.minEta = this.formatNumber(Math.min(...durations));
+            metrics.maxEta = this.formatNumber(Math.max(...durations));
+
+            // Calculate weighted average ETA
+            const totalWeight = this.participants.reduce((sum, p) => sum + p.responseWeight, 0);
+            const weightedSum = durations.reduce((sum, duration, index) =>
+                sum + (duration * this.participants[index].responseWeight), 0);
+            metrics.avgEta = this.formatNumber(totalWeight > 0 ? weightedSum / totalWeight : 0);
         }
 
         return metrics;
@@ -167,7 +188,7 @@ export class VenueOptimizer {
     public async findOptimalVenues(optimizationType: "eta" | "distance"): Promise<OptimizedVenue[]> {
         await this.initServices();
         const centroid = this.calculateCentroid();
-        const venues = await this.searchVenues(centroid);
+        const venues = await this.searchVenues(centroid, optimizationType);
 
         const optimizedVenues = await Promise.all(
             venues.map(async (venue): Promise<OptimizedVenue> => {
@@ -181,13 +202,16 @@ export class VenueOptimizer {
             }),
         );
 
-        // Sort by average metric (either distance or ETA)
-        return optimizedVenues.sort((a, b) => {
+        // Sort by the appropriate metric
+        const sorted = optimizedVenues.sort((a, b) => {
             if (optimizationType === "distance") {
                 return (a.metrics.avgDistance || 0) - (b.metrics.avgDistance || 0);
             } else {
                 return (a.metrics.avgEta || 0) - (b.metrics.avgEta || 0);
             }
         });
+
+        // Return only the top 3 venues
+        return sorted.slice(0, 3);
     }
 } 
