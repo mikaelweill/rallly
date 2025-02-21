@@ -100,6 +100,14 @@ export const participants = router({
               type: true,
             },
           },
+          startLocation: {
+            select: {
+              address: true,
+              latitude: true,
+              longitude: true,
+              transportMode: true,
+            },
+          },
         },
         orderBy: [
           {

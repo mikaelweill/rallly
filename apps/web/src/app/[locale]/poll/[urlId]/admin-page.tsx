@@ -12,6 +12,7 @@ import { usePoll } from "@/contexts/poll";
 
 import { GuestPollAlert } from "./guest-poll-alert";
 import { UnsubscribeAlert } from "./unsubscribe-alert";
+import { StartingLocationsSummary } from "@/components/poll/starting-locations-summary";
 
 export function AdminPage() {
   useTouchBeacon();
@@ -25,6 +26,7 @@ export function AdminPage() {
         <VotingForm>
           <div className="space-y-4">
             <ResponsiveResults />
+            <StartingLocationsSummary />
             <PollLocations />
           </div>
         </VotingForm>

@@ -12,6 +12,7 @@ import TruncatedLinkify from "@/components/poll/truncated-linkify";
 import { usePoll } from "@/contexts/poll";
 import { useTranslation } from "@/i18n/client";
 import { useVotingForm } from "@/components/poll/voting-form";
+import { useParticipants } from "@/components/participants-provider";
 
 const libraries: ["places"] = ["places"];
 
@@ -26,6 +27,7 @@ export function PollLocations() {
     const poll = usePoll();
     const { t } = useTranslation();
     const votingForm = useVotingForm();
+    const { participants } = useParticipants();
     const mode = votingForm.watch("mode");
     const isEditing = mode === "new" || mode === "edit";
 
@@ -294,6 +296,40 @@ export function PollLocations() {
                                             </Button>
                                         </div>
                                     )}
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setTransportMode('DRIVING')}
+                                            className={transportMode === 'DRIVING' ? 'bg-muted' : ''}
+                                        >
+                                            <Icon><Car className="h-4 w-4" /></Icon>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setTransportMode('WALKING')}
+                                            className={transportMode === 'WALKING' ? 'bg-muted' : ''}
+                                        >
+                                            <Icon><PersonStanding className="h-4 w-4" /></Icon>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setTransportMode('BICYCLING')}
+                                            className={transportMode === 'BICYCLING' ? 'bg-muted' : ''}
+                                        >
+                                            <Icon><Bike className="h-4 w-4" /></Icon>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setTransportMode('TRANSIT')}
+                                            className={transportMode === 'TRANSIT' ? 'bg-muted' : ''}
+                                        >
+                                            <Icon><Bus className="h-4 w-4" /></Icon>
+                                        </Button>
+                                    </div>
                                     <Button
                                         variant="default"
                                         size="sm"
@@ -318,7 +354,7 @@ export function PollLocations() {
                                                     address: startAddress,
                                                     latitude: userLocation.lat,
                                                     longitude: userLocation.lng,
-                                                    transportMode
+                                                    transportMode: transportMode.toLowerCase()
                                                 });
                                             }
                                         }}
@@ -357,6 +393,13 @@ export function PollLocations() {
                                             address: loc.address,
                                             lat: loc.location.lat,
                                             lng: loc.location.lng
+                                        })),
+                                        ...participants.filter(p => p.startLocation).map((p) => ({
+                                            id: p.id,
+                                            address: p.startLocation.address,
+                                            lat: p.startLocation.latitude,
+                                            lng: p.startLocation.longitude,
+                                            userName: p.name
                                         }))
                                     ]}
                                     className="h-48 w-full"
