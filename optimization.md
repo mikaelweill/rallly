@@ -147,58 +147,106 @@ interface OptimizationControls {
    - Map showing venue and participant routes
    - Venue photos and details
 
-## Implementation Plan
+## Current State
+We have:
+- A finalization window that shows participant starting locations
+- Two radio buttons for optimization type (ETA vs Distance)
+- A disabled "Calculate Optimal Venues" button
 
-### Phase 1: Finalization Flow (Current Focus)
-1. Finalization Window Enhancements
-   - [ ] Show summary of all participant starting locations
-   - [ ] Add radio buttons for optimization preference (ETA vs Distance)
-   - [ ] Add "Calculate" button that becomes enabled when:
-     * A date is selected
-     * At least 2 participants have shared their location
-     * An optimization preference is selected
-   - [ ] Show top 3 recommended locations after calculation
-   - [ ] Enable "Finalize" button only after a location is selected
+## Implementation Plan (Revised)
 
-2. Data Requirements
+### Phase 1: Basic UI Flow
+Each step should be individually testable:
+
+1. Button States ✅
    ```typescript
-   interface FinalizationData {
-     selectedDate: string;
-     optimizationType: 'eta' | 'distance';
-     participants: Array<{
-       id: string;
-       name: string;
-       location: {
-         address: string;
-         latitude: number;
-         longitude: number;
-         transportMode: string;
-       };
-       vote: 'yes' | 'maybe' | 'no';
-     }>;
+   // Calculate button enabled when:
+   const canCalculate = 
+     !!selectedDate &&
+     !!optimizationType &&
+     participantsWithLocation.length >= 2;
+   
+   // Finalize button enabled when:
+   const canFinalize = !!selectedVenue;
+   ```
+
+2. Optimization Type Selection (Current Focus)
+   - [x] Add radio buttons
+   - [x] Style selected state
+   - [ ] Fix translation issues
+   - [ ] Add loading state to radio buttons during calculation
+
+3. Calculate Button
+   - [x] Add button
+   - [x] Handle disabled state
+   - [ ] Add loading state
+   - [ ] Add error state
+   - [ ] Add success state
+
+4. Results Display (Next Up)
+   - [ ] Create basic venue card component
+   - [ ] Show venue name and address
+   - [ ] Add selection mechanism
+   - [ ] Show relevant metrics based on optimization type:
+     * For ETA: min/avg/max travel time
+     * For Distance: min/avg/max distance
+
+5. Finalize Flow
+   - [ ] Enable button only after venue selection
+   - [ ] Add confirmation dialog
+   - [ ] Handle submission to database
+   - [ ] Show success/error feedback
+
+### Immediate Next Steps
+
+1. Fix Current Issues:
+   ```typescript
+   // 1. Fix translation keys
+   const { t } = useTranslation("common");
+   
+   // 2. Add proper loading states
+   const [isCalculating, setIsCalculating] = useState(false);
+   
+   // 3. Add error handling
+   const [error, setError] = useState<string | null>(null);
+   ```
+
+2. Create Basic Venue Card:
+   ```typescript
+   interface VenueCardProps {
+     name: string;
+     address: string;
+     metrics: {
+       avg: number;
+       min: number;
+       max: number;
+     };
+     type: 'eta' | 'distance';
+     isSelected: boolean;
+     onSelect: () => void;
    }
    ```
 
-3. UI Flow
+3. Test Cases for Each Step:
    ```
-   1. Open Finalization Window
-      ↓
-   2. Show Starting Locations Summary
-      ↓
-   3. Select Date
-      ↓
-   4. Choose Optimization Type
-      ↓
-   5. Click Calculate
-      ↓
-   6. Show Top 3 Venues
-      ↓
-   7. Select Venue
-      ↓
-   8. Enable Finalize Button
+   1. Button States
+      - Should be disabled initially
+      - Should enable when all conditions met
+      - Should disable during calculation
+   
+   2. Optimization Selection
+      - Should highlight selected option
+      - Should enable calculate button
+      - Should persist selection
+   
+   3. Venue Display
+      - Should show correct metrics
+      - Should handle selection
+      - Should update finalize button
    ```
 
-### Phase 2: Core Optimization (Next)
+### Phase 2: Core Optimization
+(After UI flow is working)
 - [ ] Implement participant weight calculation
 - [ ] Build venue search with Google Places
 - [ ] Create basic scoring system
@@ -210,49 +258,45 @@ interface OptimizationControls {
 - [ ] Add venue filtering based on preferences
 - [ ] Create detailed score breakdown
 
-### Phase 4: UI Integration
-- [ ] Add optimization controls to admin view
-- [ ] Create venue recommendation cards
-- [ ] Implement interactive results map
-- [ ] Add travel time breakdown view
-
-### Phase 5: Performance & Polish
-- [ ] Cache API results
-- [ ] Optimize bulk travel time calculations
+### Phase 4: Polish & Performance
 - [ ] Add loading states and progress indicators
 - [ ] Implement error handling and fallbacks
+- [ ] Cache API results
+- [ ] Optimize bulk calculations
 
-## Technical Considerations
+## Testing Strategy
 
-### API Usage
-- Batch Google Places API calls
-- Cache results when possible
-- Implement rate limiting
-- Handle API errors gracefully
+1. UI Flow Tests:
+   ```typescript
+   // Test each state transition
+   test("optimization type selection", () => {
+     // Select ETA
+     // Verify calculate button state
+     // Verify UI updates
+   });
 
-### Performance
-- Use bulk distance matrix calculations
-- Cache intermediate results
-- Implement progressive loading
-- Consider serverless functions for heavy calculations
+   test("venue selection", () => {
+     // Select venue
+     // Verify finalize button state
+     // Verify UI updates
+   });
+   ```
 
-### Data Storage
-```typescript
-interface OptimizationResult {
-  id: string;
-  pollId: string;
-  dateId: string;
-  mode: 'eta' | 'distance';
-  recommendations: VenueRecommendation[];
-  calculatedAt: Date;
-  expiresAt: Date;  // Cache expiration
-}
-```
+2. Integration Tests:
+   ```typescript
+   test("end-to-end flow", () => {
+     // Select date
+     // Select optimization type
+     // Calculate venues
+     // Select venue
+     // Finalize
+     // Verify database update
+   });
+   ```
 
 ## Notes
-- Weights are calculated based on the specific date selected during finalization
-- A participant's votes on other dates don't affect their weight
-- This ensures venues are optimized for people who can actually attend
-- Consider adding a minimum total weight threshold before suggesting venues
-- Cache results but expire them after a reasonable time
-- Add fallback venues if top picks are unavailable 
+- Keep changes small and testable
+- Focus on one component at a time
+- Add proper error handling at each step
+- Use loading states to prevent multiple submissions
+- Validate data at each step 
