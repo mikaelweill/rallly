@@ -38,9 +38,8 @@ export function PollLocations() {
     const { t } = useTranslation();
     const votingForm = useVotingForm();
     const { participants } = useParticipants();
-    const participantsWithLocation = (participants as ParticipantWithStartLocation[]).filter(
-        (p) => p.startLocation
-    );
+    const participantsWithLocation = (participants as ParticipantWithStartLocation[])
+        .filter((p) => p.startLocation);
     const mode = votingForm.watch("mode");
     const isEditing = mode === "new" || mode === "edit";
 

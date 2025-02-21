@@ -111,9 +111,9 @@ export const participants = router({
         },
         orderBy: [
           {
-            createdAt: "desc",
+            createdAt: "asc"
           },
-          { name: "desc" },
+          { name: "asc" }
         ],
       });
       return participants;
