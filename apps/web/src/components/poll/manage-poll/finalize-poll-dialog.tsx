@@ -494,7 +494,7 @@ export const FinalizePollForm = ({
             return (
               <FormItem className="relative">
                 <FormLabel htmlFor={field.name}>
-                  <Trans i18nKey="notify" defaults="Notify" components={[]} />
+                  <Trans i18nKey="notify" defaults="Notify" />
                 </FormLabel>
                 <FormControl>
                   <RadioGroup
@@ -512,7 +512,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-none" value="none" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyNone" defaults="None" components={[]} />
+                          <Trans i18nKey="notifyNone" defaults="None" />
                         </div>
                       </div>
                     </label>
@@ -526,7 +526,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-all" value="all" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAll" defaults="All" components={[]} />
+                          <Trans i18nKey="notifyAll" defaults="All" />
                         </div>
                       </div>
                     </label>
@@ -540,7 +540,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-attendees" value="attendees" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAttendees" defaults="Attendees" components={[]} />
+                          <Trans i18nKey="notifyAttendees" defaults="Attendees" />
                         </div>
                       </div>
                     </label>

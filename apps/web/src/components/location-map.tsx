@@ -82,13 +82,13 @@ export function LocationMap({
 
         locations.forEach(location => {
             if (location.lat && location.lng) {
-                bounds.extend({ lat: location.lat, lng: location.lng });
+                bounds.extend(new google.maps.LatLng(location.lat, location.lng));
                 hasValidPoints = true;
             }
         });
 
         if (userLocation) {
-            bounds.extend(userLocation);
+            bounds.extend(new google.maps.LatLng(userLocation.lat, userLocation.lng));
             hasValidPoints = true;
         }
 

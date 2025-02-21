@@ -42,7 +42,10 @@ export class VenueOptimizer {
     private async initServices() {
         await loadGoogleMapsScript();
         const mapDiv = document.createElement("div");
-        const map = new google.maps.Map(mapDiv);
+        const map = new google.maps.Map(mapDiv, {
+            center: { lat: 0, lng: 0 }, // Default center
+            zoom: 2, // Default zoom
+        });
         this.placesService = new google.maps.places.PlacesService(map);
         this.distanceMatrixService = new google.maps.DistanceMatrixService();
     }
@@ -58,7 +61,10 @@ export class VenueOptimizer {
 
     private async searchVenues(centroid: { lat: number; lng: number }): Promise<google.maps.places.PlaceResult[]> {
         if (!this.placesService) {
-            throw new Error("Places service not initialized");
+            await this.initServices();
+            if (!this.placesService) {
+                throw new Error("Places service not initialized");
+            }
         }
 
         return new Promise((resolve, reject) => {
@@ -68,7 +74,7 @@ export class VenueOptimizer {
                 type: "restaurant", // Start with restaurants, can be expanded
             };
 
-            this.placesService.nearbySearch(request, (results, status) => {
+            this.placesService!.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results) {
                     resolve(results.slice(0, 3)); // Get top 3 results
                 } else {
