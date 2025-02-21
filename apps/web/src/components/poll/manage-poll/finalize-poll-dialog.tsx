@@ -468,15 +468,15 @@ export const FinalizePollForm = ({
                           <div className="mt-2 text-sm">
                             {form.getValues("optimizationType") === "distance" ? (
                               <>
-                                <div>Min Distance: {venue.metrics.minDistance?.toFixed(1)} km</div>
-                                <div>Max Distance: {venue.metrics.maxDistance?.toFixed(1)} km</div>
-                                <div>Avg Distance: {venue.metrics.avgDistance?.toFixed(1)} km</div>
+                                <div>Min Distance: {(venue.metrics.minDistance || 0).toFixed(1)} km</div>
+                                <div>Max Distance: {(venue.metrics.maxDistance || 0).toFixed(1)} km</div>
+                                <div>Avg Distance: {(venue.metrics.avgDistance || 0).toFixed(1)} km</div>
                               </>
                             ) : (
                               <>
-                                <div>Min ETA: {venue.metrics.minEta} min</div>
-                                <div>Max ETA: {venue.metrics.maxEta} min</div>
-                                <div>Avg ETA: {venue.metrics.avgEta} min</div>
+                                <div>Min ETA: {(venue.metrics.minEta || 0).toFixed(1)} min</div>
+                                <div>Max ETA: {(venue.metrics.maxEta || 0).toFixed(1)} min</div>
+                                <div>Avg ETA: {(venue.metrics.avgEta || 0).toFixed(1)} min</div>
                               </>
                             )}
                           </div>
