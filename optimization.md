@@ -149,120 +149,107 @@ interface OptimizationControls {
 
 ## Current State
 We have:
-- A finalization window that shows participant starting locations
-- Two radio buttons for optimization type (ETA vs Distance)
-- A disabled "Calculate Optimal Venues" button
+- [x] A finalization window that shows participant starting locations
+- [x] Two radio buttons for optimization type (ETA vs Distance)
+- [x] A "Calculate Optimal Venues" button that enables when conditions are met
+- [x] Basic venue search functionality:
+  * For Distance: Gets 3 closest venues
+  * For ETA: Currently same as distance (needs update)
+- [x] Basic metrics calculation for each venue
+- [ ] Venue selection mechanism
+- [ ] Confirmation step with map view
 
 ## Implementation Plan (Revised)
 
-### Phase 1: Basic UI Flow
-Each step should be individually testable:
+### Phase 1: Venue Optimization & Selection (Current Focus)
 
-1. Button States ✅
+1. ETA Optimization Update
    ```typescript
-   // Calculate button enabled when:
-   const canCalculate = 
-     !!selectedDate &&
-     !!optimizationType &&
-     participantsWithLocation.length >= 2;
-   
-   // Finalize button enabled when:
-   const canFinalize = !!selectedVenue;
+   // Current approach (needs update):
+   - Gets 3 closest venues physically
+   - Calculates ETA for those 3
+
+   // Simplified approach:
+   - Get 3 closest venues to centroid (same as distance mode)
+   - Calculate ETAs for these venues
+   - Sort by weighted ETA instead of physical distance
    ```
 
-2. Optimization Type Selection (Current Focus)
-   - [x] Add radio buttons
-   - [x] Style selected state
-   - [ ] Fix translation issues
-   - [ ] Add loading state to radio buttons during calculation
-
-3. Calculate Button
-   - [x] Add button
-   - [x] Handle disabled state
-   - [ ] Add loading state
-   - [ ] Add error state
-   - [ ] Add success state
-
-4. Results Display (Next Up)
-   - [ ] Create basic venue card component
-   - [ ] Show venue name and address
-   - [ ] Add selection mechanism
-   - [ ] Show relevant metrics based on optimization type:
-     * For ETA: min/avg/max travel time
-     * For Distance: min/avg/max distance
-
-5. Finalize Flow
-   - [ ] Enable button only after venue selection
-   - [ ] Add confirmation dialog
-   - [ ] Handle submission to database
-   - [ ] Show success/error feedback
-
-### Immediate Next Steps
-
-1. Fix Current Issues:
+2. Venue Selection Flow
    ```typescript
-   // 1. Fix translation keys
-   const { t } = useTranslation("common");
-   
-   // 2. Add proper loading states
-   const [isCalculating, setIsCalculating] = useState(false);
-   
-   // 3. Add error handling
-   const [error, setError] = useState<string | null>(null);
-   ```
+   interface VenueSelectionStep {
+     // First: Show venue cards with metrics
+     venues: Array<{
+       id: string;
+       name: string;
+       metrics: VenueMetrics;
+     }>;
+     selectedVenueId: string | null;
+   }
 
-2. Create Basic Venue Card:
-   ```typescript
-   interface VenueCardProps {
-     name: string;
-     address: string;
-     metrics: {
-       avg: number;
-       min: number;
-       max: number;
-     };
-     type: 'eta' | 'distance';
-     isSelected: boolean;
-     onSelect: () => void;
+   interface ConfirmationStep {
+     // Then: Show map with routes
+     selectedVenue: Venue;
+     participantLocations: Location[];
+     routes: Array<{
+       participantId: string;
+       route: RouteDetails;
+     }>;
    }
    ```
 
-3. Test Cases for Each Step:
+### Immediate Next Steps
+
+1. Update ETA Optimization:
+   - Keep venue search the same (3 closest)
+   - Update sorting to use weighted ETAs
+   - Apply participant vote weights
+
+2. Create Confirmation Step:
+   - Add new confirmation dialog/screen
+   - Show map with:
+     * All participant locations
+     * Selected venue
+     * Routes to venue
+   - Add final confirmation button
+
+3. Implement Selection Flow:
+   - Add selection state to venue cards
+   - Show confirmation step after selection
+   - Add final confirmation button
+   - Handle database update
+
+### Testing Strategy Updates
+
+1. ETA Optimization Tests:
+   ```typescript
+   test("eta optimization", () => {
+     // Verify gets more than 3 initial venues
+     // Verify proper ETA calculations
+     // Verify correct weighting by votes
+     // Verify returns best 3 by ETA
+   });
    ```
-   1. Button States
-      - Should be disabled initially
-      - Should enable when all conditions met
-      - Should disable during calculation
-   
-   2. Optimization Selection
-      - Should highlight selected option
-      - Should enable calculate button
-      - Should persist selection
-   
-   3. Venue Display
-      - Should show correct metrics
-      - Should handle selection
-      - Should update finalize button
+
+2. Map Integration Tests:
+   ```typescript
+   test("map venue display", () => {
+     // Verify venues appear on map
+     // Verify correct marker styling
+     // Verify selection updates
+     // Verify routes display
+   });
    ```
 
-### Phase 2: Core Optimization
-(After UI flow is working)
-- [ ] Implement participant weight calculation
-- [ ] Build venue search with Google Places
-- [ ] Create basic scoring system
-- [ ] Add travel time/distance calculations
-
-### Phase 3: Advanced Features
-- [ ] Add support for both optimization modes
-- [ ] Implement weighted centroid calculation
-- [ ] Add venue filtering based on preferences
-- [ ] Create detailed score breakdown
-
-### Phase 4: Polish & Performance
-- [ ] Add loading states and progress indicators
-- [ ] Implement error handling and fallbacks
-- [ ] Cache API results
-- [ ] Optimize bulk calculations
+3. Selection Flow Tests:
+   ```typescript
+   test("venue selection", () => {
+     // Verify card selection state
+     // Verify map selection state
+     // Verify finalize button enables
+     // Verify selection persists
+   });
+   ```
 
 ## Testing Strategy
 

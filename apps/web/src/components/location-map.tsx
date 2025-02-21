@@ -75,29 +75,40 @@ export function LocationMap({
     }, [geocoder, onLocationChange]);
 
     const fitBoundsToLocations = useCallback(() => {
-        if (!mapRef.current || !isLoaded) return;
+        if (!mapRef.current || !isLoaded || !google?.maps) return;
 
-        const bounds = new google.maps.LatLngBounds();
-        let hasValidPoints = false;
+        try {
+            const bounds = new google.maps.LatLngBounds();
+            let hasValidPoints = false;
 
-        locations.forEach(location => {
-            if (location.lat && location.lng) {
-                bounds.extend(new google.maps.LatLng(location.lat, location.lng));
+            locations.forEach(location => {
+                if (location?.lat && location?.lng) {
+                    const latLng = new google.maps.LatLng(location.lat, location.lng);
+                    bounds.extend(latLng);
+                    hasValidPoints = true;
+                }
+            });
+
+            if (userLocation?.lat && userLocation?.lng) {
+                const latLng = new google.maps.LatLng(userLocation.lat, userLocation.lng);
+                bounds.extend(latLng);
                 hasValidPoints = true;
             }
-        });
 
-        if (userLocation) {
-            bounds.extend(new google.maps.LatLng(userLocation.lat, userLocation.lng));
-            hasValidPoints = true;
-        }
-
-        if (hasValidPoints) {
-            mapRef.current.fitBounds(bounds);
-            const currentZoom = mapRef.current.getZoom();
-            if (currentZoom && currentZoom > 15) {
-                mapRef.current.setZoom(15);
+            if (hasValidPoints && mapRef.current) {
+                // Ensure bounds has valid coordinates before fitting
+                const ne = bounds.getNorthEast();
+                const sw = bounds.getSouthWest();
+                if (ne && sw) {
+                    mapRef.current.fitBounds(bounds);
+                    const currentZoom = mapRef.current.getZoom();
+                    if (currentZoom && currentZoom > 15) {
+                        mapRef.current.setZoom(15);
+                    }
+                }
             }
+        } catch (error) {
+            console.error('Error fitting bounds:', error);
         }
     }, [locations, userLocation, isLoaded]);
 
