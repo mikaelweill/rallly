@@ -61,14 +61,16 @@ export const StartingLocationsSummary: React.FunctionComponent = () => {
                 </div>
             </CardHeader>
             <div className="space-y-4 p-4">
-                {participantsWithLocation.map((participant) => (
+                {participantsWithLocation.map((participant, index) => (
                     <div key={participant.id} className="flex items-start gap-3">
-                        <OptimizedAvatarImage name={participant.name} size="sm" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                            {index + 1}
+                        </div>
                         <div className="space-y-1">
                             <div className="font-medium">{participant.name}</div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <MapPinIcon className="h-4 w-4" />
-                                <span>{participant.startLocation?.address}</span>
+                                <span>{`${index + 1}. ${participant.startLocation?.address}`}</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                 <Icon>

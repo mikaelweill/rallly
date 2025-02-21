@@ -1,6 +1,6 @@
 import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
-import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign, XIcon } from "lucide-react";
+import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign, XIcon, AlertTriangle } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
 import { useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@rallly/ui/alert";
@@ -13,6 +13,7 @@ import { usePoll } from "@/contexts/poll";
 import { useTranslation } from "@/i18n/client";
 import { useVotingForm } from "@/components/poll/voting-form";
 import { useParticipants } from "@/components/participants-provider";
+import type { Participant } from "@rallly/database";
 
 const libraries: ["places"] = ["places"];
 
@@ -23,11 +24,23 @@ type DistanceInfo = {
 
 type TransportMode = 'DRIVING' | 'WALKING' | 'BICYCLING' | 'TRANSIT';
 
+type ParticipantWithStartLocation = Participant & {
+    startLocation?: {
+        address: string;
+        latitude: number;
+        longitude: number;
+        transportMode?: string;
+    };
+};
+
 export function PollLocations() {
     const poll = usePoll();
     const { t } = useTranslation();
     const votingForm = useVotingForm();
     const { participants } = useParticipants();
+    const participantsWithLocation = (participants as ParticipantWithStartLocation[]).filter(
+        (p) => p.startLocation
+    );
     const mode = votingForm.watch("mode");
     const isEditing = mode === "new" || mode === "edit";
 
@@ -58,9 +71,9 @@ export function PollLocations() {
     const pollLocations: Location[] = poll.locations?.map(loc => ({
         id: loc.id,
         address: loc.address,
-        placeId: loc.placeId || undefined,
-        lat: loc.lat || undefined,
-        lng: loc.lng || undefined
+        placeId: loc.placeId ?? undefined,
+        lat: loc.lat ?? undefined,
+        lng: loc.lng ?? undefined
     })) ?? [];
 
     if (!poll.isLocationOptimized && (!poll.locations || poll.locations.length === 0)) {
@@ -213,11 +226,13 @@ export function PollLocations() {
                                 <h4 className="text-sm font-medium">Participant Locations</h4>
                                 {setLocations.map((loc, index) => (
                                     <div key={loc.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                                            {index + 1}
-                                        </span>
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                            {participantsWithLocation.length + index + 1}
+                                        </div>
                                         <span>{loc.userName}</span>
-                                        <span className="truncate">{loc.address}</span>
+                                        <span className="truncate">
+                                            {`${participantsWithLocation.length + index + 1}. ${loc.address}`}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -382,25 +397,32 @@ export function PollLocations() {
                                 <LocationMap
                                     address=""
                                     locations={[
+                                        ...participantsWithLocation.map((p, idx) => {
+                                            if (!p.startLocation) return null;
+                                            return {
+                                                id: p.id,
+                                                address: `${idx + 1}. ${p.startLocation.address}`,
+                                                lat: p.startLocation.latitude,
+                                                lng: p.startLocation.longitude,
+                                                userName: p.name,
+                                                label: `${idx + 1}`
+                                            };
+                                        }).filter((p): p is NonNullable<typeof p> => p !== null),
                                         ...(userLocation && !setLocations.find(loc => loc.userName === "You") ? [{
                                             id: "temp",
                                             address: startAddress,
                                             lat: userLocation.lat,
-                                            lng: userLocation.lng
+                                            lng: userLocation.lng,
+                                            label: `${participantsWithLocation.length + 1}`
                                         }] : []),
-                                        ...setLocations.map((loc) => ({
+                                        ...(!userLocation || setLocations.find(loc => loc.userName === "You") ? setLocations.map((loc, idx) => ({
                                             id: loc.id,
-                                            address: loc.address,
+                                            address: `${participantsWithLocation.length + idx + 1}. ${loc.address}`,
                                             lat: loc.location.lat,
-                                            lng: loc.location.lng
-                                        })),
-                                        ...participants.filter(p => p.startLocation).map((p) => ({
-                                            id: p.id,
-                                            address: p.startLocation.address,
-                                            lat: p.startLocation.latitude,
-                                            lng: p.startLocation.longitude,
-                                            userName: p.name
-                                        }))
+                                            lng: loc.location.lng,
+                                            userName: loc.userName,
+                                            label: `${participantsWithLocation.length + idx + 1}`
+                                        })) : [])
                                     ]}
                                     className="h-48 w-full"
                                     isLoaded={isLoaded}
@@ -525,7 +547,7 @@ export function PollLocations() {
                             </div>
                         </div>
                         {error && (
-                            <Alert variant="destructive" className="mb-4">
+                            <Alert variant="destructive" className="mb-4" icon={AlertTriangle as any}>
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
@@ -534,7 +556,13 @@ export function PollLocations() {
                                 <div
                                     key={location.id}
                                     className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => handleLocationClick(location)}
+                                    onClick={() => handleLocationClick({
+                                        id: location.id,
+                                        address: location.address,
+                                        placeId: location.placeId ?? undefined,
+                                        lat: location.lat ?? undefined,
+                                        lng: location.lng ?? undefined
+                                    })}
                                 >
                                     <p className="text-muted-foreground truncate whitespace-nowrap text-sm">
                                         <Icon>
@@ -575,7 +603,7 @@ export function PollLocations() {
                         <div className="relative">
                             <LocationMap
                                 address={poll.locations[0]?.address}
-                                locations={poll.locations}
+                                locations={pollLocations}
                                 userLocation={userLocation}
                                 directions={directions}
                                 selectedLocationId={selectedLocationId}
@@ -604,7 +632,7 @@ export function PollLocations() {
                 <DialogContent className="sm:max-w-[800px] h-[600px]">
                     <LocationMap
                         address={poll.locations[0]?.address}
-                        locations={poll.locations}
+                        locations={pollLocations}
                         userLocation={userLocation}
                         directions={directions}
                         selectedLocationId={selectedLocationId}

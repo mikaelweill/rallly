@@ -7,6 +7,7 @@ export interface Location {
     placeId?: string;
     lat?: number;
     lng?: number;
+    label?: string;
 }
 
 interface LocationMapProps {
@@ -186,7 +187,7 @@ export function LocationMap({
                             key={location.id}
                             position={{ lat: location.lat, lng: location.lng }}
                             label={{
-                                text: `${index + 1}`,
+                                text: location.label ?? `${index + 1}`,
                                 color: 'white',
                                 fontFamily: 'system-ui',
                                 fontSize: '14px',
