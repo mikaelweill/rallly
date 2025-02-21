@@ -2,7 +2,7 @@ import { Button } from "@rallly/ui/button";
 import { Icon } from "@rallly/ui/icon";
 import { MapPinIcon, NavigationIcon, CrosshairIcon, Maximize2Icon, Car, PersonStanding, Bike, Bus, Map, Star, DollarSign, XIcon, AlertTriangle } from "lucide-react";
 import { useLoadScript, Autocomplete, DirectionsService, DirectionsRenderer } from "@react-google-maps/api";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@rallly/ui/alert";
 import { Input } from "@rallly/ui/input";
 import { Dialog, DialogContent } from "@rallly/ui/dialog";
@@ -33,7 +33,11 @@ type ParticipantWithStartLocation = Participant & {
     };
 };
 
-export function PollLocations() {
+export interface PollLocationsProps {
+    onLocationSet?: () => void;
+}
+
+export function PollLocations({ onLocationSet }: PollLocationsProps) {
     const poll = usePoll();
     const { t } = useTranslation();
     const votingForm = useVotingForm();
@@ -78,6 +82,25 @@ export function PollLocations() {
     if (!poll.isLocationOptimized && (!poll.locations || poll.locations.length === 0)) {
         return null;
     }
+
+    // Clear locations when form is submitted
+    useEffect(() => {
+        const subscription = votingForm.watch((_, { name, type }) => {
+            if (type === "change" && name === "mode" && votingForm.getValues("mode") === "view") {
+                // Form was submitted successfully, clear ALL location-related state
+                setSetLocations([]);
+                setUserLocation(undefined);
+                setStartAddress("");
+                setTempLocation(undefined);
+                setDirections(undefined);
+                setSelectedLocationId(undefined);
+                setDistances({});
+                // Also clear the form value
+                votingForm.setValue("startLocation", undefined);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [votingForm]);
 
     const handleUseCurrentLocation = async () => {
         try {
@@ -373,6 +396,8 @@ export function PollLocations() {
                                                     longitude: userLocation.lng,
                                                     transportMode: transportMode.toLowerCase()
                                                 });
+                                                // Notify parent that location was set
+                                                onLocationSet?.();
                                             }
                                         }}
                                         disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
