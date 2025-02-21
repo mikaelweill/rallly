@@ -84,10 +84,11 @@ export class VenueOptimizer {
         }
 
         return new Promise((resolve, reject) => {
+            // Note: When using rankBy: DISTANCE, we cannot specify radius
             const request: google.maps.places.PlaceSearchRequest = {
                 location: new google.maps.LatLng(centroid.lat, centroid.lng),
-                radius: this.preferences.radius || 5000,
                 type: this.preferences.type || "restaurant",
+                rankBy: google.maps.places.RankBy.DISTANCE // This will sort by distance from centroid
             };
 
             this.placesService!.nearbySearch(request, (results, status) => {
@@ -107,6 +108,8 @@ export class VenueOptimizer {
                         return true;
                     });
 
+                    // Take the first 3 places that pass our filters
+                    // They will already be sorted by distance since we used rankBy: DISTANCE
                     resolve(filtered.slice(0, 3));
                 } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
                     resolve([]);
