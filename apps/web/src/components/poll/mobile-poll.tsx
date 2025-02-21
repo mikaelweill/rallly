@@ -28,6 +28,8 @@ import { usePermissions } from "@/contexts/permissions";
 import { useVisibleParticipants } from "../participants-provider";
 import { useUser } from "../user-provider";
 import GroupedOptions from "./mobile-poll/grouped-options";
+import { PollLocations } from "./poll-locations";
+import { LocationVotingForm } from "./location-voting-form";
 
 if (typeof window !== "undefined") {
   smoothscroll.polyfill();
@@ -183,6 +185,16 @@ const MobilePoll: React.FunctionComponent = () => {
           return `${option.month} ${option.year}`;
         }}
       />
+      {poll.locations && poll.locations.length > 0 && (
+        <Card>
+          <PollLocations />
+          <LocationVotingForm
+            editable={votingForm.watch("mode") === "new" || votingForm.watch("mode") === "edit"}
+            selectedParticipantId={votingForm.watch("participantId")}
+            hideHeader={true}
+          />
+        </Card>
+      )}
       <AnimatePresence>
         {isEditing ? (
           <m.div

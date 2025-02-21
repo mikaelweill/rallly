@@ -38,6 +38,7 @@ import ParticipantRow from "./desktop-poll/participant-row";
 import ParticipantRowForm from "./desktop-poll/participant-row-form";
 import PollHeader from "./desktop-poll/poll-header";
 import LocationVotingForm from "./location-voting-form";
+import { PollLocations } from "./poll-locations";
 
 function EscapeListener({ onEscape }: { onEscape: () => void }) {
   React.useEffect(() => {
@@ -346,7 +347,14 @@ const DesktopPoll: React.FunctionComponent = () => {
                       {visibleParticipants.map((participant, i) => (
                         <ParticipantRow
                           key={participant.id}
-                          participant={participant}
+                          participant={{
+                            id: participant.id,
+                            name: participant.name,
+                            userId: participant.userId ?? undefined,
+                            guestId: participant.guestId ?? undefined,
+                            email: participant.email ?? undefined,
+                            votes: participant.votes,
+                          }}
                           editMode={
                             mode === "edit" &&
                             votingForm.watch("participantId") === participant.id
@@ -377,6 +385,7 @@ const DesktopPoll: React.FunctionComponent = () => {
       {/* Locations Section */}
       {poll.locations && poll.locations.length > 0 && (
         <Card>
+          <PollLocations />
           <LocationVotingForm
             editable={mode === "new" || mode === "edit"}
             selectedParticipantId={votingForm.watch("participantId")}
