@@ -25,6 +25,8 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Clock, MapPin, NavigationIcon } from "lucide-react";
+import type { Participant } from "@rallly/database";
+import type { Vote } from "@/trpc/client/types";
 
 import { DateIconInner } from "@/components/date-icon";
 import { useParticipants } from "@/components/participants-provider";
@@ -35,12 +37,13 @@ import { usePoll } from "@/contexts/poll";
 import { trpc } from "@/trpc/client";
 import { useDayjs } from "@/utils/dayjs";
 import { StartingLocationsSummary } from "@/components/poll/starting-locations-summary";
+import { VenueOptimizer } from "@/utils/venue-optimizer";
 
 const formSchema = z.object({
   selectedOptionId: z.string(),
   selectedLocationId: z.string().optional(),
   notify: z.enum(["none", "all", "attendees"]),
-  optimizationType: z.enum(["eta", "distance"]).optional(),
+  optimizationType: z.enum(["eta", "distance"]),
 });
 
 type FinalizeFormData = z.infer<typeof formSchema>;
@@ -51,8 +54,14 @@ type OptionScore = {
   no: string[];
 };
 
-type ParticipantWithLocationVotes = {
-  id: string;
+// Extend the base Participant type with our additional fields
+type ParticipantWithLocation = Participant & {
+  votes: Vote[];
+  startLocation?: {
+    latitude: number;
+    longitude: number;
+    transportMode?: string;
+  };
   locationVotes?: Array<{
     locationId: string;
     type?: "yes" | "no" | "ifNeedBe";
@@ -97,7 +106,7 @@ const useLocationScoreById = () => {
       };
     });
 
-    (responses as ParticipantWithLocationVotes[]).forEach((response) => {
+    (responses as ParticipantWithLocation[]).forEach((response) => {
       response.locationVotes?.forEach((vote) => {
         if (vote.type && vote.locationId in scoreByLocationId) {
           scoreByLocationId[vote.locationId][vote.type].push(response.id);
@@ -129,6 +138,20 @@ export const FinalizePollForm = ({
   const scoreByLocationId = useLocationScoreById();
   const { participants } = useParticipants();
   const [canCalculate, setCanCalculate] = useState(false);
+  const [optimizedVenues, setOptimizedVenues] = useState<Array<{
+    placeId: string;
+    name: string;
+    address: string;
+    metrics: {
+      minDistance?: number;
+      maxDistance?: number;
+      avgDistance?: number;
+      minEta?: number;
+      maxEta?: number;
+      avgEta?: number;
+    };
+  }> | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   const options = [...poll.options]
     .sort((a, b) => {
@@ -166,8 +189,20 @@ export const FinalizePollForm = ({
   // Watch for form changes to enable/disable calculate button
   useEffect(() => {
     const subscription = form.watch((value) => {
-      const participantsWithLocation = (participants as ParticipantWithLocationVotes[])
-        .filter((p) => p.locationVotes && p.locationVotes.length > 0);
+      // Check if we have at least 2 participants with locations and a selected date and optimization type
+      const participantsWithLocation = (participants as ParticipantWithLocation[])
+        .filter((p) => p.startLocation);
+
+      console.log("Calculate button conditions:", {
+        selectedOptionId: value.selectedOptionId,
+        optimizationType: value.optimizationType,
+        participantsWithLocation: participantsWithLocation.length,
+        participants: (participants as ParticipantWithLocation[]).map(p => ({
+          id: p.id,
+          hasLocation: !!p.startLocation,
+          startLocation: p.startLocation
+        }))
+      });
 
       setCanCalculate(
         !!value.selectedOptionId &&
@@ -177,6 +212,40 @@ export const FinalizePollForm = ({
     });
     return () => subscription.unsubscribe();
   }, [form, participants]);
+
+  const handleCalculate = async () => {
+    const formData = form.getValues();
+    setIsCalculating(true);
+    try {
+      const participantsWithLocation = (participants as ParticipantWithLocation[])
+        .filter((p) => p.startLocation);
+
+      const selectedDate = poll.options.find(
+        (opt) => opt.id === formData.selectedOptionId,
+      )?.startTime;
+
+      if (!selectedDate) {
+        console.error("No date selected");
+        return;
+      }
+
+      // TODO: Import and use VenueOptimizer here
+      const optimizer = new VenueOptimizer(
+        participantsWithLocation.map((p) => ({
+          location: p.startLocation!,
+          transportMode: p.startLocation?.transportMode || "DRIVING",
+        })),
+        selectedDate,
+      );
+
+      const venues = await optimizer.findOptimalVenues(formData.optimizationType);
+      setOptimizedVenues(venues);
+    } catch (error) {
+      console.error("Failed to calculate optimal venues:", error);
+    } finally {
+      setIsCalculating(false);
+    }
+  };
 
   return (
     <Form {...form}>
@@ -369,18 +438,51 @@ export const FinalizePollForm = ({
                 </FormItem>
               )}
             />
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                disabled={!canCalculate}
-                onClick={() => {
-                  // TODO: Implement calculation
-                  console.log("Calculate clicked");
-                }}
-              >
-                <NavigationIcon className="mr-2 h-4 w-4" />
-                Calculate Optimal Venues
-              </Button>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  disabled={!canCalculate}
+                  loading={isCalculating}
+                  onClick={handleCalculate}
+                >
+                  <NavigationIcon className="mr-2 h-4 w-4" />
+                  Calculate Optimal Venues
+                </Button>
+              </div>
+              {optimizedVenues && (
+                <div className="rounded-lg border bg-white p-4">
+                  <h3 className="mb-4 font-medium">Top Venue Recommendations</h3>
+                  <div className="space-y-4">
+                    {optimizedVenues.map((venue, index) => (
+                      <div key={venue.placeId} className="flex items-start gap-4 rounded-lg border p-4">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{venue.name}</div>
+                          <div className="text-sm text-gray-500">{venue.address}</div>
+                          <div className="mt-2 text-sm">
+                            {form.getValues("optimizationType") === "distance" ? (
+                              <>
+                                <div>Min Distance: {venue.metrics.minDistance?.toFixed(1)} km</div>
+                                <div>Max Distance: {venue.metrics.maxDistance?.toFixed(1)} km</div>
+                                <div>Avg Distance: {venue.metrics.avgDistance?.toFixed(1)} km</div>
+                              </>
+                            ) : (
+                              <>
+                                <div>Min ETA: {venue.metrics.minEta} min</div>
+                                <div>Max ETA: {venue.metrics.maxEta} min</div>
+                                <div>Avg ETA: {venue.metrics.avgEta} min</div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
@@ -392,7 +494,7 @@ export const FinalizePollForm = ({
             return (
               <FormItem className="relative">
                 <FormLabel htmlFor={field.name}>
-                  <Trans i18nKey="notify" defaults="Notify" />
+                  <Trans i18nKey="notify" defaults="Notify" components={[]} />
                 </FormLabel>
                 <FormControl>
                   <RadioGroup
@@ -410,7 +512,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-none" value="none" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyNone" defaults="None" />
+                          <Trans i18nKey="notifyNone" defaults="None" components={[]} />
                         </div>
                       </div>
                     </label>
@@ -424,7 +526,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-all" value="all" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAll" defaults="All" />
+                          <Trans i18nKey="notifyAll" defaults="All" components={[]} />
                         </div>
                       </div>
                     </label>
@@ -438,7 +540,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-attendees" value="attendees" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAttendees" defaults="Attendees" />
+                          <Trans i18nKey="notifyAttendees" defaults="Attendees" components={[]} />
                         </div>
                       </div>
                     </label>
