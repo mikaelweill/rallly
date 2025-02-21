@@ -222,16 +222,19 @@ export function PollLocations() {
                         </div>
                         {setLocations.length > 0 && (
                             <div className="space-y-2">
-                                <h4 className="text-sm font-medium">Participant Locations</h4>
-                                {setLocations.map((loc, index) => (
-                                    <div key={loc.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-                                            {participantsWithLocation.length + index + 1}
+                                <h4 className="text-sm font-medium">Your Location</h4>
+                                {setLocations.map((loc) => (
+                                    <div key={loc.id} className="flex items-center justify-between rounded-md border p-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+                                                {participantsWithLocation.length + 1}
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium">{loc.userName}</div>
+                                                <div className="text-sm text-muted-foreground">{loc.address}</div>
+                                                <div className="text-xs text-muted-foreground">Transport mode: {transportMode.toLowerCase()}</div>
+                                            </div>
                                         </div>
-                                        <span>{loc.userName}</span>
-                                        <span className="truncate">
-                                            {`${participantsWithLocation.length + index + 1}. ${loc.address}`}
-                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -357,15 +360,12 @@ export function PollLocations() {
                                                 votingForm.setValue("startLocation", undefined);
                                             } else if (userLocation && startAddress) {
                                                 // Add to set locations
-                                                setSetLocations(prev => [
-                                                    {
-                                                        id: Math.random().toString(),
-                                                        userName: "You",
-                                                        address: startAddress,
-                                                        location: userLocation
-                                                    },
-                                                    ...prev
-                                                ]);
+                                                setSetLocations([{
+                                                    id: Math.random().toString(),
+                                                    userName: "You",
+                                                    address: startAddress,
+                                                    location: userLocation
+                                                }]);
                                                 // Update the form with the locked location
                                                 votingForm.setValue("startLocation", {
                                                     address: startAddress,
@@ -373,8 +373,6 @@ export function PollLocations() {
                                                     longitude: userLocation.lng,
                                                     transportMode: transportMode.toLowerCase()
                                                 });
-                                                // Clear temporary locations after setting in form
-                                                setSetLocations([]);
                                             }
                                         }}
                                         disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
