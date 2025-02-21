@@ -249,7 +249,7 @@ export const NewParticipantForm = (props: NewParticipantModalProps) => {
             <div className="text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Icon><NavigationIcon className="h-4 w-4" /></Icon>
-                <Trans i18nKey="startingLocation" />
+                Starting Location
               </div>
             </div>
             <div className="rounded border p-3">

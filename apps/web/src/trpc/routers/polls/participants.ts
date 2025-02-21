@@ -149,13 +149,19 @@ export const participants = router({
           })
           .array()
           .optional(),
+        startLocation: z.object({
+          address: z.string(),
+          latitude: z.number(),
+          longitude: z.number(),
+          transportMode: z.string().optional(),
+        }).optional(),
       }),
     )
-    .mutation(async ({ ctx, input: { pollId, votes, locationVotes, name, email } }) => {
+    .mutation(async ({ ctx, input: { pollId, votes, locationVotes, name, email, startLocation } }) => {
       const { user } = ctx;
 
-      const participant = await prisma.$transaction(async (prisma) => {
-        const participantCount = await prisma.participant.count({
+      const participant = await prisma.$transaction(async (tx) => {
+        const participantCount = await tx.participant.count({
           where: {
             pollId,
             deleted: false,
@@ -169,13 +175,21 @@ export const participants = router({
           });
         }
 
-        const participant = await prisma.participant.create({
+        const participant = await tx.participant.create({
           data: {
             pollId: pollId,
             name: name,
             email,
             ...(user.isGuest ? { guestId: user.id } : { userId: user.id }),
             locale: user.locale ?? undefined,
+            startLocation: startLocation ? {
+              create: {
+                address: startLocation.address,
+                latitude: startLocation.latitude,
+                longitude: startLocation.longitude,
+                transportMode: startLocation.transportMode ?? "driving",
+              }
+            } : undefined,
           },
           include: {
             poll: {
@@ -184,11 +198,12 @@ export const participants = router({
                 title: true,
               },
             },
+            startLocation: true,
           },
         });
 
         // Create time votes
-        await prisma.vote.createMany({
+        await tx.vote.createMany({
           data: votes.map(({ optionId, type }) => ({
             optionId,
             type,
@@ -199,7 +214,7 @@ export const participants = router({
 
         // Create location votes if provided
         if (locationVotes?.length) {
-          await prisma.locationVote.createMany({
+          await tx.locationVote.createMany({
             data: locationVotes.map(({ locationId, type }) => ({
               locationId,
               type,
