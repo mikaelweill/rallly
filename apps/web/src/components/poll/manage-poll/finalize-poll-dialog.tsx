@@ -229,13 +229,18 @@ export const FinalizePollForm = ({
         return;
       }
 
-      // TODO: Import and use VenueOptimizer here
       const optimizer = new VenueOptimizer(
         participantsWithLocation.map((p) => ({
           location: p.startLocation!,
           transportMode: p.startLocation?.transportMode || "DRIVING",
         })),
         selectedDate,
+        {
+          type: poll.venuePreferences?.venueType || undefined,
+          minRating: poll.venuePreferences?.minRating || undefined,
+          maxPrice: poll.venuePreferences?.priceLevel || undefined,
+          radius: 5000, // 5km radius
+        }
       );
 
       const venues = await optimizer.findOptimalVenues(formData.optimizationType);
@@ -494,7 +499,7 @@ export const FinalizePollForm = ({
             return (
               <FormItem className="relative">
                 <FormLabel htmlFor={field.name}>
-                  <Trans i18nKey="notify" defaults="Notify" />
+                  <Trans i18nKey="notifications" defaults="Notify" />
                 </FormLabel>
                 <FormControl>
                   <RadioGroup
@@ -512,7 +517,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-none" value="none" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyNone" defaults="None" />
+                          <Trans i18nKey="notificationsOff" defaults="None" />
                         </div>
                       </div>
                     </label>
@@ -526,7 +531,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-all" value="all" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAll" defaults="All" />
+                          <Trans i18nKey="notificationsOn" defaults="All" />
                         </div>
                       </div>
                     </label>
@@ -540,7 +545,7 @@ export const FinalizePollForm = ({
                       <RadioGroupItem id="notify-attendees" value="attendees" />
                       <div className="grow">
                         <div className="text-sm font-medium">
-                          <Trans i18nKey="notifyAttendees" defaults="Attendees" />
+                          <Trans i18nKey="participants" defaults="Attendees" />
                         </div>
                       </div>
                     </label>

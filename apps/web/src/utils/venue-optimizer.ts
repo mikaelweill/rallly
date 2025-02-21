@@ -33,10 +33,26 @@ export class VenueOptimizer {
     private selectedDate: Date;
     private placesService: google.maps.places.PlacesService | null = null;
     private distanceMatrixService: google.maps.DistanceMatrixService | null = null;
+    private preferences: {
+        type?: string;
+        minRating?: number;
+        maxPrice?: number;
+        radius?: number;
+    };
 
-    constructor(participants: Participant[], selectedDate: Date) {
+    constructor(
+        participants: Participant[],
+        selectedDate: Date,
+        preferences?: {
+            type?: string;
+            minRating?: number;
+            maxPrice?: number;
+            radius?: number;
+        }
+    ) {
         this.participants = participants;
         this.selectedDate = selectedDate;
+        this.preferences = preferences || {};
     }
 
     private async initServices() {
@@ -70,13 +86,30 @@ export class VenueOptimizer {
         return new Promise((resolve, reject) => {
             const request: google.maps.places.PlaceSearchRequest = {
                 location: new google.maps.LatLng(centroid.lat, centroid.lng),
-                radius: 5000, // 5km radius
-                type: "restaurant", // Start with restaurants, can be expanded
+                radius: this.preferences.radius || 5000,
+                type: this.preferences.type || "restaurant",
             };
 
             this.placesService!.nearbySearch(request, (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                    resolve(results.slice(0, 3)); // Get top 3 results
+                    // Filter results by rating and price level
+                    const filtered = results.filter(place => {
+                        if (this.preferences.minRating && place.rating) {
+                            if (place.rating < this.preferences.minRating) {
+                                return false;
+                            }
+                        }
+                        if (this.preferences.maxPrice && place.price_level) {
+                            if (place.price_level > this.preferences.maxPrice) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    });
+
+                    resolve(filtered.slice(0, 3));
+                } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+                    resolve([]);
                 } else {
                     reject(new Error(`Places search failed: ${status}`));
                 }
