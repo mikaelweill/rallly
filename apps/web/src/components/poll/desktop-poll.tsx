@@ -39,6 +39,7 @@ import ParticipantRowForm from "./desktop-poll/participant-row-form";
 import PollHeader from "./desktop-poll/poll-header";
 import LocationVotingForm from "./location-voting-form";
 import { PollLocations } from "./poll-locations";
+import { StartingLocationsSummary } from "./starting-locations-summary";
 
 function EscapeListener({ onEscape }: { onEscape: () => void }) {
   React.useEffect(() => {
@@ -383,7 +384,17 @@ const DesktopPoll: React.FunctionComponent = () => {
       </Card>
 
       {/* Locations Section */}
-      {poll.locations && poll.locations.length > 0 && (
+      {poll.isLocationOptimized ? (
+        <div className="space-y-4">
+          <StartingLocationsSummary />
+          <PollLocations />
+          <LocationVotingForm
+            editable={mode === "new" || mode === "edit"}
+            selectedParticipantId={votingForm.watch("participantId")}
+            hideHeader={true}
+          />
+        </div>
+      ) : poll.locations && poll.locations.length > 0 ? (
         <Card>
           <PollLocations />
           <LocationVotingForm
@@ -392,7 +403,7 @@ const DesktopPoll: React.FunctionComponent = () => {
             hideHeader={true}
           />
         </Card>
-      )}
+      ) : null}
     </div>
   );
 };
