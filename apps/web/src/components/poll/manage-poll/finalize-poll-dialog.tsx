@@ -408,36 +408,34 @@ export const FinalizePollForm = ({
                     <RadioGroup
                       onValueChange={field.onChange}
                       value={field.value}
-                      className="grid grid-cols-2 gap-2"
+                      className="grid grid-cols-2 gap-2 overflow-y-auto rounded-lg border bg-gray-100 p-2"
                     >
-                      <div>
-                        <RadioGroupItem
-                          value="eta"
-                          id="eta"
-                          className="peer sr-only"
-                        />
-                        <label
-                          htmlFor="eta"
-                          className="flex cursor-pointer items-center justify-center rounded-lg border bg-white p-4 text-sm peer-checked:border-primary peer-checked:text-primary"
-                        >
+                      <label
+                        htmlFor="eta"
+                        className={cn(
+                          "group flex select-none items-center justify-center gap-4 rounded-lg border bg-white p-3 text-base",
+                          field.value === "eta" ? "border-primary ring-2 ring-primary ring-offset-2" : ""
+                        )}
+                      >
+                        <RadioGroupItem id="eta" value="eta" />
+                        <div className="flex items-center">
                           <Clock className="mr-2 h-4 w-4" />
                           Optimize for ETA
-                        </label>
-                      </div>
-                      <div>
-                        <RadioGroupItem
-                          value="distance"
-                          id="distance"
-                          className="peer sr-only"
-                        />
-                        <label
-                          htmlFor="distance"
-                          className="flex cursor-pointer items-center justify-center rounded-lg border bg-white p-4 text-sm peer-checked:border-primary peer-checked:text-primary"
-                        >
+                        </div>
+                      </label>
+                      <label
+                        htmlFor="distance"
+                        className={cn(
+                          "group flex select-none items-center justify-center gap-4 rounded-lg border bg-white p-3 text-base",
+                          field.value === "distance" ? "border-primary ring-2 ring-primary ring-offset-2" : ""
+                        )}
+                      >
+                        <RadioGroupItem id="distance" value="distance" />
+                        <div className="flex items-center">
                           <MapPin className="mr-2 h-4 w-4" />
                           Optimize for Distance
-                        </label>
-                      </div>
+                        </div>
+                      </label>
                     </RadioGroup>
                   </FormControl>
                 </FormItem>

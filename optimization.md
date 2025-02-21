@@ -152,12 +152,64 @@ We have:
 - [x] A finalization window that shows participant starting locations
 - [x] Two radio buttons for optimization type (ETA vs Distance)
 - [x] A "Calculate Optimal Venues" button that enables when conditions are met
-- [x] Basic venue search functionality:
-  * For Distance: Gets 3 closest venues
-  * For ETA: Currently same as distance (needs update)
-- [x] Basic metrics calculation for each venue
-- [ ] Venue selection mechanism
-- [ ] Confirmation step with map view
+- [x] Basic venue search functionality
+- [ ] Proper ETA-based venue ranking
+- [ ] Venue selection via cards and map
+- [ ] Interactive map showing venues and routes
+
+### Phase 1: Venue Optimization & Selection (Current Focus)
+
+1. ETA Optimization Update
+   ```typescript
+   // Current approach (needs update):
+   - Gets 3 closest venues physically
+   - Calculates ETA for those 3
+   - Sorts by physical distance
+
+   // Correct approach:
+   - Calculate weighted centroid based on participant votes
+   - Use Distance Matrix API to get ETAs to nearby venues
+   - Sort and select top 3 venues by weighted ETA
+   ```
+
+2. Venue Display and Selection
+   ```typescript
+   interface VenueCard {
+     venue: VenueDetails;
+     metrics: VenueMetrics;
+     isSelected: boolean;
+     onSelect: () => void;
+   }
+
+   interface VenueMap {
+     participants: Location[];
+     venues: VenueDetails[];
+     selectedVenueId?: string;
+     onVenueSelect: (venueId: string) => void;
+     // Make map component removable/toggleable
+     className?: string;
+     style?: React.CSSProperties;
+   }
+   ```
+
+### Immediate Next Steps
+
+1. Fix ETA Optimization:
+   - Update centroid calculation to use weighted positions
+   - Modify venue search to sort by actual ETAs
+   - Apply proper weighting from participant votes
+
+2. Enhance Venue Selection:
+   - Add selection state to venue cards
+   - Make venues clickable on both cards and map
+   - Show routes to selected venue
+   - Make map component toggleable/removable
+
+3. Improve UI Layout:
+   - Show map alongside venue cards
+   - Add venue markers with distinct styling
+   - Make map collapsible/removable if needed
+   - Ensure responsive layout works
 
 ## Implementation Plan (Revised)
 
@@ -168,11 +220,12 @@ We have:
    // Current approach (needs update):
    - Gets 3 closest venues physically
    - Calculates ETA for those 3
+   - Sorts by physical distance
 
-   // Simplified approach:
-   - Get 3 closest venues to centroid (same as distance mode)
-   - Calculate ETAs for these venues
-   - Sort by weighted ETA instead of physical distance
+   // Correct approach:
+   - Calculate weighted centroid based on participant votes
+   - Use Distance Matrix API to get ETAs to nearby venues
+   - Sort and select top 3 venues by weighted ETA
    ```
 
 2. Venue Selection Flow
