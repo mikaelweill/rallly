@@ -357,12 +357,15 @@ export function PollLocations() {
                                                 votingForm.setValue("startLocation", undefined);
                                             } else if (userLocation && startAddress) {
                                                 // Add to set locations
-                                                setSetLocations(prev => [...prev, {
-                                                    id: Math.random().toString(),
-                                                    userName: "You",
-                                                    address: startAddress,
-                                                    location: userLocation
-                                                }]);
+                                                setSetLocations(prev => [
+                                                    {
+                                                        id: Math.random().toString(),
+                                                        userName: "You",
+                                                        address: startAddress,
+                                                        location: userLocation
+                                                    },
+                                                    ...prev
+                                                ]);
                                                 // Update the form with the locked location
                                                 votingForm.setValue("startLocation", {
                                                     address: startAddress,
@@ -370,6 +373,8 @@ export function PollLocations() {
                                                     longitude: userLocation.lng,
                                                     transportMode: transportMode.toLowerCase()
                                                 });
+                                                // Clear temporary locations after setting in form
+                                                setSetLocations([]);
                                             }
                                         }}
                                         disabled={(!userLocation && !startAddress) && !setLocations.find(loc => loc.userName === "You")}
