@@ -85,31 +85,102 @@ export class VenueOptimizer {
         }
 
         return new Promise((resolve, reject) => {
+            // Define strict types for each venue category
+            const venueType = this.preferences.type?.toLowerCase();
+            if (!venueType) {
+                throw new Error("Venue type is required");
+            }
+            console.log("Searching for venue type:", venueType);
+
+            // Set up the search request
             const request: google.maps.places.PlaceSearchRequest = {
                 location: new google.maps.LatLng(centroid.lat, centroid.lng),
-                type: this.preferences.type || "restaurant",
+                // Use the exact venue type from preferences
+                type: venueType,
                 // For distance optimization, rank by distance. For ETA, use radius to get all venues within range
                 ...(optimizationType === "distance"
                     ? { rankBy: google.maps.places.RankBy.DISTANCE }
                     : { radius: 3000 }) // 3km radius for ETA optimization
             };
 
+            console.log("Searching with request:", request);
+
             this.placesService!.nearbySearch(request, async (results, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-                    // Filter results by rating and price level
+                    console.log("Raw results:", results.map(place => ({
+                        name: place.name,
+                        types: place.types,
+                        business_status: place.business_status
+                    })));
+
+                    // Filter results by rating, price level, and ensure it matches our desired types
                     const filtered = results.filter(place => {
+                        // Skip permanently closed places
+                        if (place.business_status === "CLOSED_PERMANENTLY") {
+                            return false;
+                        }
+
+                        // Get the place's types
+                        const placeTypes = place.types || [];
+                        console.log(`Checking types for ${place.name}:`, placeTypes);
+
+                        // ALWAYS ensure the requested type is the primary type
+                        if (placeTypes[0] !== venueType) {
+                            console.log(`${place.name} excluded because primary type "${placeTypes[0]}" isn't ${venueType}`);
+                            return false;
+                        }
+
+                        // Define excluded types based on the venue type we're searching for
+                        const excludedTypes: Record<string, string[]> = {
+                            "cafe": [
+                                "grocery_or_supermarket", "supermarket", "convenience_store",
+                                "department_store", "shopping_mall", "store"
+                            ],
+                            "restaurant": [
+                                "grocery_or_supermarket", "supermarket", "convenience_store",
+                                "department_store", "shopping_mall", "store", "cafe", "bar"
+                            ],
+                            "bar": [
+                                "grocery_or_supermarket", "supermarket", "convenience_store",
+                                "department_store", "shopping_mall", "store", "cafe", "restaurant"
+                            ]
+                            // Add more venue types and their excluded types as needed
+                        };
+
+                        // If we have exclusions for this venue type, apply them
+                        if (excludedTypes[venueType]) {
+                            // If it has any of these types, it's not a dedicated venue of our desired type
+                            if (placeTypes.some(t => excludedTypes[venueType].includes(t))) {
+                                console.log(`${place.name} excluded because it has excluded types:`,
+                                    placeTypes.filter(t => excludedTypes[venueType].includes(t)));
+                                return false;
+                            }
+                        }
+
+                        // Apply rating filter if specified
                         if (this.preferences.minRating && place.rating) {
                             if (place.rating < this.preferences.minRating) {
+                                console.log(`${place.name} excluded due to low rating: ${place.rating}`);
                                 return false;
                             }
                         }
+
+                        // Apply price level filter if specified
                         if (this.preferences.maxPrice && place.price_level) {
                             if (place.price_level > this.preferences.maxPrice) {
+                                console.log(`${place.name} excluded due to high price level: ${place.price_level}`);
                                 return false;
                             }
                         }
+
+                        console.log(`${place.name} ACCEPTED`);
                         return true;
                     });
+
+                    console.log("Filtered results:", filtered.map(place => ({
+                        name: place.name,
+                        types: place.types
+                    })));
 
                     if (optimizationType === "distance") {
                         // For distance, we already have them sorted, just take top 3
