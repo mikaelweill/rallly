@@ -21,9 +21,10 @@ import { RadioGroup, RadioGroupItem } from "@rallly/ui/radio-group";
 import dayjs from "dayjs";
 import { MapPinIcon } from "lucide-react";
 import { Trans } from "next-i18next";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Clock, MapPin, NavigationIcon } from "lucide-react";
 
 import { DateIconInner } from "@/components/date-icon";
 import { useParticipants } from "@/components/participants-provider";
@@ -33,11 +34,13 @@ import { VoteSummaryProgressBar } from "@/components/vote-summary-progress-bar";
 import { usePoll } from "@/contexts/poll";
 import { trpc } from "@/trpc/client";
 import { useDayjs } from "@/utils/dayjs";
+import { StartingLocationsSummary } from "@/components/poll/starting-locations-summary";
 
 const formSchema = z.object({
   selectedOptionId: z.string(),
   selectedLocationId: z.string().optional(),
   notify: z.enum(["none", "all", "attendees"]),
+  optimizationType: z.enum(["eta", "distance"]).optional(),
 });
 
 type FinalizeFormData = z.infer<typeof formSchema>;
@@ -121,11 +124,11 @@ export const FinalizePollForm = ({
   onSubmit?: (data: FinalizeFormData) => void;
 }) => {
   const poll = usePoll();
-
   const { adjustTimeZone } = useDayjs();
   const scoreByOptionId = useScoreByOptionId();
   const scoreByLocationId = useLocationScoreById();
   const { participants } = useParticipants();
+  const [canCalculate, setCanCalculate] = useState(false);
 
   const options = [...poll.options]
     .sort((a, b) => {
@@ -156,8 +159,24 @@ export const FinalizePollForm = ({
       selectedOptionId: options[0].id,
       selectedLocationId: poll.locations?.[0]?.id,
       notify: "all",
+      optimizationType: undefined,
     },
   });
+
+  // Watch for form changes to enable/disable calculate button
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      const participantsWithLocation = (participants as ParticipantWithLocationVotes[])
+        .filter((p) => p.locationVotes && p.locationVotes.length > 0);
+
+      setCanCalculate(
+        !!value.selectedOptionId &&
+        !!value.optimizationType &&
+        participantsWithLocation.length >= 2
+      );
+    });
+    return () => subscription.unsubscribe();
+  }, [form, participants]);
 
   return (
     <Form {...form}>
@@ -300,6 +319,70 @@ export const FinalizePollForm = ({
               );
             }}
           />
+        )}
+
+        {poll.isLocationOptimized && (
+          <>
+            <StartingLocationsSummary />
+            <FormField
+              control={form.control}
+              name="optimizationType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Optimization Preference</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      <div>
+                        <RadioGroupItem
+                          value="eta"
+                          id="eta"
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor="eta"
+                          className="flex cursor-pointer items-center justify-center rounded-lg border bg-white p-4 text-sm peer-checked:border-primary peer-checked:text-primary"
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          Optimize for ETA
+                        </label>
+                      </div>
+                      <div>
+                        <RadioGroupItem
+                          value="distance"
+                          id="distance"
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor="distance"
+                          className="flex cursor-pointer items-center justify-center rounded-lg border bg-white p-4 text-sm peer-checked:border-primary peer-checked:text-primary"
+                        >
+                          <MapPin className="mr-2 h-4 w-4" />
+                          Optimize for Distance
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                disabled={!canCalculate}
+                onClick={() => {
+                  // TODO: Implement calculation
+                  console.log("Calculate clicked");
+                }}
+              >
+                <NavigationIcon className="mr-2 h-4 w-4" />
+                Calculate Optimal Venues
+              </Button>
+            </div>
+          </>
         )}
 
         <FormField

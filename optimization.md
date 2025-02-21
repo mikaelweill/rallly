@@ -149,25 +149,74 @@ interface OptimizationControls {
 
 ## Implementation Plan
 
-### Phase 1: Core Algorithm
+### Phase 1: Finalization Flow (Current Focus)
+1. Finalization Window Enhancements
+   - [ ] Show summary of all participant starting locations
+   - [ ] Add radio buttons for optimization preference (ETA vs Distance)
+   - [ ] Add "Calculate" button that becomes enabled when:
+     * A date is selected
+     * At least 2 participants have shared their location
+     * An optimization preference is selected
+   - [ ] Show top 3 recommended locations after calculation
+   - [ ] Enable "Finalize" button only after a location is selected
+
+2. Data Requirements
+   ```typescript
+   interface FinalizationData {
+     selectedDate: string;
+     optimizationType: 'eta' | 'distance';
+     participants: Array<{
+       id: string;
+       name: string;
+       location: {
+         address: string;
+         latitude: number;
+         longitude: number;
+         transportMode: string;
+       };
+       vote: 'yes' | 'maybe' | 'no';
+     }>;
+   }
+   ```
+
+3. UI Flow
+   ```
+   1. Open Finalization Window
+      ↓
+   2. Show Starting Locations Summary
+      ↓
+   3. Select Date
+      ↓
+   4. Choose Optimization Type
+      ↓
+   5. Click Calculate
+      ↓
+   6. Show Top 3 Venues
+      ↓
+   7. Select Venue
+      ↓
+   8. Enable Finalize Button
+   ```
+
+### Phase 2: Core Optimization (Next)
 - [ ] Implement participant weight calculation
 - [ ] Build venue search with Google Places
 - [ ] Create basic scoring system
 - [ ] Add travel time/distance calculations
 
-### Phase 2: Advanced Features
+### Phase 3: Advanced Features
 - [ ] Add support for both optimization modes
 - [ ] Implement weighted centroid calculation
 - [ ] Add venue filtering based on preferences
 - [ ] Create detailed score breakdown
 
-### Phase 3: UI Integration
+### Phase 4: UI Integration
 - [ ] Add optimization controls to admin view
 - [ ] Create venue recommendation cards
 - [ ] Implement interactive results map
 - [ ] Add travel time breakdown view
 
-### Phase 4: Performance & Polish
+### Phase 5: Performance & Polish
 - [ ] Cache API results
 - [ ] Optimize bulk travel time calculations
 - [ ] Add loading states and progress indicators
