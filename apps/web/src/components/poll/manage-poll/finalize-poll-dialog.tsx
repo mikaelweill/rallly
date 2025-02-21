@@ -230,16 +230,28 @@ export const FinalizePollForm = ({
       }
 
       const optimizer = new VenueOptimizer(
-        participantsWithLocation.map((p) => ({
-          location: p.startLocation!,
-          transportMode: p.startLocation?.transportMode || "DRIVING",
-        })),
+        participantsWithLocation.map((p) => {
+          // Calculate response weight based on the participant's vote for the selected date
+          const participantVotes = scoreByOptionId[formData.selectedOptionId];
+          let responseWeight = 0;
+          if (participantVotes.yes.includes(p.id)) {
+            responseWeight = 1;
+          } else if (participantVotes.ifNeedBe.includes(p.id)) {
+            responseWeight = 0.5;
+          }
+
+          return {
+            location: p.startLocation!,
+            transportMode: p.startLocation?.transportMode || "DRIVING",
+            responseWeight,
+          };
+        }),
         selectedDate,
         {
           type: poll.venuePreferences?.venueType || undefined,
           minRating: poll.venuePreferences?.minRating || undefined,
           maxPrice: poll.venuePreferences?.priceLevel || undefined,
-          radius: 5000, // 5km radius
+          radius: 3000, // 3km radius
         }
       );
 

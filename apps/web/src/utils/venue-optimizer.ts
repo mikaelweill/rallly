@@ -169,7 +169,13 @@ export class VenueOptimizer {
             const totalWeight = this.participants.reduce((sum, p) => sum + p.responseWeight, 0);
             const weightedSum = distances.reduce((sum, distance, index) =>
                 sum + (distance * this.participants[index].responseWeight), 0);
-            metrics.avgDistance = this.formatNumber(totalWeight > 0 ? weightedSum / totalWeight : 0);
+
+            // If no one can attend (totalWeight = 0), use simple average
+            metrics.avgDistance = this.formatNumber(
+                totalWeight > 0
+                    ? weightedSum / totalWeight
+                    : distances.reduce((sum, d) => sum + d, 0) / distances.length
+            );
         } else {
             const durations = values.map(element => element.duration.value / 60); // Convert to minutes
             metrics.minEta = this.formatNumber(Math.min(...durations));
@@ -179,7 +185,13 @@ export class VenueOptimizer {
             const totalWeight = this.participants.reduce((sum, p) => sum + p.responseWeight, 0);
             const weightedSum = durations.reduce((sum, duration, index) =>
                 sum + (duration * this.participants[index].responseWeight), 0);
-            metrics.avgEta = this.formatNumber(totalWeight > 0 ? weightedSum / totalWeight : 0);
+
+            // If no one can attend (totalWeight = 0), use simple average
+            metrics.avgEta = this.formatNumber(
+                totalWeight > 0
+                    ? weightedSum / totalWeight
+                    : durations.reduce((sum, d) => sum + d, 0) / durations.length
+            );
         }
 
         return metrics;
