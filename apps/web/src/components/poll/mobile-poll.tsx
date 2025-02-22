@@ -29,7 +29,7 @@ import { useVisibleParticipants } from "../participants-provider";
 import { useUser } from "../user-provider";
 import GroupedOptions from "./mobile-poll/grouped-options";
 import { PollLocations } from "./poll-locations";
-import { LocationVotingForm } from "./location-voting-form";
+import LocationVotingForm from "./location-voting-form";
 import { StartingLocationsSummary } from "./starting-locations-summary";
 
 if (typeof window !== "undefined") {

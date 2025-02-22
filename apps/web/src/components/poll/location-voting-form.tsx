@@ -221,4 +221,5 @@ const LocationVotingForm: React.FunctionComponent<LocationVotingFormProps> = ({
     );
 };
 
+export { LocationVotingForm };
 export default LocationVotingForm; 
