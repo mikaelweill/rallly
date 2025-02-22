@@ -3,6 +3,133 @@
 ## Overview
 The location optimization algorithm combines participant location data with their time preferences to suggest optimal meeting venues. It weighs both spatial (distance/ETA) and temporal (vote preferences) factors to provide the best recommendations.
 
+## Recent Improvements
+
+### ✅ Venue Type Filtering (Completed)
+- Fixed venue type filtering to be more accurate and consistent
+- Now properly uses Google Places API's primary type
+- Removed complex blacklisting in favor of trusting Google's primary type categorization
+- Ensures venues are primarily of the requested type (e.g., cafes are actually cafes, not grocery stores with cafes inside)
+
+### ✅ Search Results Handling (Completed)
+- Distance optimization: Gets all venues, sorts by distance, takes top 3
+- ETA optimization: Gets all venues within radius, calculates ETAs, sorts by ETA
+- Consistent filtering across both modes
+- Proper handling of permanently closed venues
+
+### ✅ Weighted Calculations (Completed)
+- Proper weighting of participant votes (1.0 for yes, 0.5 for maybe, 0 for no)
+- Weighted average calculations for both distance and ETA metrics
+- Fallback to simple average when no participants can attend
+- Proper handling of participant response weights in venue scoring
+
+## Immediate Tasks
+
+### 1. Venue Selection UI
+- [ ] Add selection state to venue cards
+- [ ] Add select/confirm button to each venue card
+- [ ] Highlight selected venue in the list
+- [ ] Add confirmation dialog for venue selection
+
+### 2. Database Updates
+- [ ] Add venue details to Event model:
+```typescript
+interface EventVenue {
+    placeId: string;
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+}
+
+// Database schema update
+model Event {
+    // ... existing fields
+    venue        EventVenue?
+}
+```
+- [ ] Add API endpoint to save selected venue
+- [ ] Update finalize poll mutation to include venue
+
+### 3. Event Display
+- [ ] Add venue section to event display
+- [ ] Show venue name, address, and map
+- [ ] Add directions link for participants
+- [ ] Display travel times for participants
+
+## Implementation Plan
+
+### Phase 1: Selection UI
+```typescript
+interface VenueCard {
+    venue: Venue;
+    metrics: VenueMetrics;
+    isSelected: boolean;
+    onSelect: () => void;
+}
+
+interface ConfirmVenueDialog {
+    venue: Venue;
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+```
+
+### Phase 2: Database Updates
+```typescript
+// API endpoint
+async function finalizeWithVenue(pollId: string, venue: EventVenue) {
+    // Save venue details with event
+    // Update poll status
+    // Send notifications
+}
+```
+
+### Phase 3: Event Display
+```typescript
+interface EventVenueDisplay {
+    venue: EventVenue;
+    participantTravelTimes?: {
+        [participantId: string]: {
+            duration: number;
+            distance: number;
+        };
+    };
+}
+```
+
+## Testing Strategy
+
+### Unit Tests
+```typescript
+test("venue selection", () => {
+    // Test venue card selection
+    // Test confirmation dialog
+    // Test data validation
+});
+
+test("venue persistence", () => {
+    // Test database updates
+    // Test API endpoint
+    // Test error handling
+});
+```
+
+### Integration Tests
+```typescript
+test("end-to-end venue selection", () => {
+    // Test selection flow
+    // Test persistence
+    // Test display updates
+});
+```
+
+## Notes
+- Keep the selection UI simple and intuitive
+- Ensure proper validation before saving
+- Add clear success/error feedback
+- Make venue details easily accessible in event view
+
 ## Participant Weighting System
 
 ### Vote Weight Calculation
@@ -138,205 +265,3 @@ interface OptimizationControls {
   dateSelection: string;   // Selected date to optimize for
 }
 ```
-
-### Results Display
-1. Top 3 venues shown in cards with:
-   - Venue name, address, rating, price level
-   - Average travel time/distance
-   - Individual travel times for each participant
-   - Map showing venue and participant routes
-   - Venue photos and details
-
-## Current State
-We have:
-- [x] A finalization window that shows participant starting locations
-- [x] Two radio buttons for optimization type (ETA vs Distance)
-- [x] A "Calculate Optimal Venues" button that enables when conditions are met
-- [x] Basic venue search functionality
-- [ ] Proper ETA-based venue ranking
-- [ ] Venue selection via cards and map
-- [ ] Interactive map showing venues and routes
-
-### Phase 1: Venue Optimization & Selection (Current Focus)
-
-1. ETA Optimization Update
-   ```typescript
-   // Current approach (needs update):
-   - Gets 3 closest venues physically
-   - Calculates ETA for those 3
-   - Sorts by physical distance
-
-   // Correct approach:
-   - Calculate weighted centroid based on participant votes
-   - Use Distance Matrix API to get ETAs to nearby venues
-   - Sort and select top 3 venues by weighted ETA
-   ```
-
-2. Venue Display and Selection
-   ```typescript
-   interface VenueCard {
-     venue: VenueDetails;
-     metrics: VenueMetrics;
-     isSelected: boolean;
-     onSelect: () => void;
-   }
-
-   interface VenueMap {
-     participants: Location[];
-     venues: VenueDetails[];
-     selectedVenueId?: string;
-     onVenueSelect: (venueId: string) => void;
-     // Make map component removable/toggleable
-     className?: string;
-     style?: React.CSSProperties;
-   }
-   ```
-
-### Immediate Next Steps
-
-1. Fix ETA Optimization:
-   - Update centroid calculation to use weighted positions
-   - Modify venue search to sort by actual ETAs
-   - Apply proper weighting from participant votes
-
-2. Enhance Venue Selection:
-   - Add selection state to venue cards
-   - Make venues clickable on both cards and map
-   - Show routes to selected venue
-   - Make map component toggleable/removable
-
-3. Improve UI Layout:
-   - Show map alongside venue cards
-   - Add venue markers with distinct styling
-   - Make map collapsible/removable if needed
-   - Ensure responsive layout works
-
-## Implementation Plan (Revised)
-
-### Phase 1: Venue Optimization & Selection (Current Focus)
-
-1. ETA Optimization Update
-   ```typescript
-   // Current approach (needs update):
-   - Gets 3 closest venues physically
-   - Calculates ETA for those 3
-   - Sorts by physical distance
-
-   // Correct approach:
-   - Calculate weighted centroid based on participant votes
-   - Use Distance Matrix API to get ETAs to nearby venues
-   - Sort and select top 3 venues by weighted ETA
-   ```
-
-2. Venue Selection Flow
-   ```typescript
-   interface VenueSelectionStep {
-     // First: Show venue cards with metrics
-     venues: Array<{
-       id: string;
-       name: string;
-       metrics: VenueMetrics;
-     }>;
-     selectedVenueId: string | null;
-   }
-
-   interface ConfirmationStep {
-     // Then: Show map with routes
-     selectedVenue: Venue;
-     participantLocations: Location[];
-     routes: Array<{
-       participantId: string;
-       route: RouteDetails;
-     }>;
-   }
-   ```
-
-### Immediate Next Steps
-
-1. Update ETA Optimization:
-   - Keep venue search the same (3 closest)
-   - Update sorting to use weighted ETAs
-   - Apply participant vote weights
-
-2. Create Confirmation Step:
-   - Add new confirmation dialog/screen
-   - Show map with:
-     * All participant locations
-     * Selected venue
-     * Routes to venue
-   - Add final confirmation button
-
-3. Implement Selection Flow:
-   - Add selection state to venue cards
-   - Show confirmation step after selection
-   - Add final confirmation button
-   - Handle database update
-
-### Testing Strategy Updates
-
-1. ETA Optimization Tests:
-   ```typescript
-   test("eta optimization", () => {
-     // Verify gets more than 3 initial venues
-     // Verify proper ETA calculations
-     // Verify correct weighting by votes
-     // Verify returns best 3 by ETA
-   });
-   ```
-
-2. Map Integration Tests:
-   ```typescript
-   test("map venue display", () => {
-     // Verify venues appear on map
-     // Verify correct marker styling
-     // Verify selection updates
-     // Verify routes display
-   });
-   ```
-
-3. Selection Flow Tests:
-   ```typescript
-   test("venue selection", () => {
-     // Verify card selection state
-     // Verify map selection state
-     // Verify finalize button enables
-     // Verify selection persists
-   });
-   ```
-
-## Testing Strategy
-
-1. UI Flow Tests:
-   ```typescript
-   // Test each state transition
-   test("optimization type selection", () => {
-     // Select ETA
-     // Verify calculate button state
-     // Verify UI updates
-   });
-
-   test("venue selection", () => {
-     // Select venue
-     // Verify finalize button state
-     // Verify UI updates
-   });
-   ```
-
-2. Integration Tests:
-   ```typescript
-   test("end-to-end flow", () => {
-     // Select date
-     // Select optimization type
-     // Calculate venues
-     // Select venue
-     // Finalize
-     // Verify database update
-   });
-   ```
-
-## Notes
-- Keep changes small and testable
-- Focus on one component at a time
-- Add proper error handling at each step
-- Use loading states to prevent multiple submissions
-- Validate data at each step 

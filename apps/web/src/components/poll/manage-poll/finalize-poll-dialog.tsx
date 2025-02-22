@@ -38,12 +38,14 @@ import { trpc } from "@/trpc/client";
 import { useDayjs } from "@/utils/dayjs";
 import { StartingLocationsSummary } from "@/components/poll/starting-locations-summary";
 import { VenueOptimizer } from "@/utils/venue-optimizer";
+import { CheckIcon, PlusIcon } from "lucide-react";
 
 const formSchema = z.object({
   selectedOptionId: z.string(),
   selectedLocationId: z.string().optional(),
   notify: z.enum(["none", "all", "attendees"]),
-  optimizationType: z.enum(["eta", "distance"]),
+  optimizationType: z.enum(["distance", "eta"]),
+  selectedVenueId: z.string().optional(),
 });
 
 type FinalizeFormData = z.infer<typeof formSchema>;
@@ -152,6 +154,7 @@ export const FinalizePollForm = ({
     };
   }> | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
 
   const options = [...poll.options]
     .sort((a, b) => {
@@ -182,7 +185,8 @@ export const FinalizePollForm = ({
       selectedOptionId: options[0].id,
       selectedLocationId: poll.locations?.[0]?.id,
       notify: "all",
-      optimizationType: undefined,
+      optimizationType: "distance",
+      selectedVenueId: undefined,
     },
   });
 
@@ -212,6 +216,14 @@ export const FinalizePollForm = ({
     });
     return () => subscription.unsubscribe();
   }, [form, participants]);
+
+  useEffect(() => {
+    if (selectedVenueId) {
+      form.setValue("selectedVenueId", selectedVenueId);
+    } else {
+      form.setValue("selectedVenueId", undefined);
+    }
+  }, [selectedVenueId, form]);
 
   const handleCalculate = async () => {
     const formData = form.getValues();
@@ -470,11 +482,17 @@ export const FinalizePollForm = ({
                   <h3 className="mb-4 font-medium">Top Venue Recommendations</h3>
                   <div className="space-y-4">
                     {optimizedVenues.map((venue, index) => (
-                      <div key={venue.placeId} className="flex items-start gap-4 rounded-lg border p-4">
+                      <div
+                        key={venue.placeId}
+                        className={cn(
+                          "flex items-start gap-4 rounded-lg border p-4 relative",
+                          selectedVenueId === venue.placeId && "border-primary bg-primary/5"
+                        )}
+                      >
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                           {index + 1}
                         </div>
-                        <div>
+                        <div className="flex-grow">
                           <div className="font-medium">{venue.name}</div>
                           <div className="text-sm text-gray-500">{venue.address}</div>
                           <div className="mt-2 text-sm">
@@ -493,6 +511,22 @@ export const FinalizePollForm = ({
                             )}
                           </div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVenueId(venue.placeId)}
+                          className={cn(
+                            "absolute right-4 top-4 rounded-full p-2 transition-colors",
+                            selectedVenueId === venue.placeId
+                              ? "bg-primary text-white hover:bg-primary/90"
+                              : "bg-gray-100 hover:bg-gray-200"
+                          )}
+                        >
+                          {selectedVenueId === venue.placeId ? (
+                            <CheckIcon className="h-5 w-5" />
+                          ) : (
+                            <PlusIcon className="h-5 w-5" />
+                          )}
+                        </button>
                       </div>
                     ))}
                   </div>
