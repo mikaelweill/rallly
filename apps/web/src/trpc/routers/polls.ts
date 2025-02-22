@@ -538,6 +538,11 @@ export const polls = router({
         optionId: z.string(),
         locationId: z.string().optional(),
         notify: z.enum(["none", "all", "attendees"]),
+        venue: z.object({
+          placeId: z.string(),
+          name: z.string(),
+          address: z.string(),
+        }).optional(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -623,6 +628,22 @@ export const polls = router({
         eventStart = eventStart.utc();
       }
 
+      // If we have a venue, create it as a PollLocation first
+      let locationId = input.locationId;
+      if (input.venue) {
+        const location = await prisma.pollLocation.create({
+          data: {
+            pollId: input.pollId,
+            address: input.venue.address,
+            placeId: input.venue.placeId,
+          },
+          select: {
+            id: true,
+          },
+        });
+        locationId = location.id;
+      }
+
       await prisma.poll.update({
         where: {
           id: input.pollId,
@@ -632,7 +653,7 @@ export const polls = router({
           event: {
             create: {
               optionId: input.optionId,
-              locationId: input.locationId,
+              locationId,
               start: eventStart.toDate(),
               duration: option.duration,
               title: poll.title,

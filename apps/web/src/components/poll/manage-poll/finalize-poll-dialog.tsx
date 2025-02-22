@@ -129,18 +129,12 @@ function DateIcon({ start }: { start: Date }) {
 
 export const FinalizePollForm = ({
   name,
+  optimizedVenues,
+  setOptimizedVenues,
   onSubmit,
 }: {
   name: string;
-  onSubmit?: (data: FinalizeFormData) => void;
-}) => {
-  const poll = usePoll();
-  const { adjustTimeZone } = useDayjs();
-  const scoreByOptionId = useScoreByOptionId();
-  const scoreByLocationId = useLocationScoreById();
-  const { participants } = useParticipants();
-  const [canCalculate, setCanCalculate] = useState(false);
-  const [optimizedVenues, setOptimizedVenues] = useState<Array<{
+  optimizedVenues: Array<{
     placeId: string;
     name: string;
     address: string;
@@ -152,7 +146,28 @@ export const FinalizePollForm = ({
       maxEta?: number;
       avgEta?: number;
     };
-  }> | null>(null);
+  }> | null;
+  setOptimizedVenues: (venues: Array<{
+    placeId: string;
+    name: string;
+    address: string;
+    metrics: {
+      minDistance?: number;
+      maxDistance?: number;
+      avgDistance?: number;
+      minEta?: number;
+      maxEta?: number;
+      avgEta?: number;
+    };
+  }> | null) => void;
+  onSubmit?: (data: FinalizeFormData) => void;
+}) => {
+  const poll = usePoll();
+  const { adjustTimeZone } = useDayjs();
+  const scoreByOptionId = useScoreByOptionId();
+  const scoreByLocationId = useLocationScoreById();
+  const { participants } = useParticipants();
+  const [canCalculate, setCanCalculate] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
 
@@ -607,6 +622,20 @@ export const FinalizePollForm = ({
 export function FinalizePollDialog(props: DialogProps) {
   const poll = usePoll();
   const scheduleEvent = trpc.polls.book.useMutation();
+  const [optimizedVenues, setOptimizedVenues] = useState<Array<{
+    placeId: string;
+    name: string;
+    address: string;
+    metrics: {
+      minDistance?: number;
+      maxDistance?: number;
+      avgDistance?: number;
+      minEta?: number;
+      maxEta?: number;
+      avgEta?: number;
+    };
+  }> | null>(null);
+
   return (
     <Dialog {...props}>
       <DialogContent size="2xl">
@@ -623,12 +652,23 @@ export function FinalizePollDialog(props: DialogProps) {
         </DialogHeader>
         <FinalizePollForm
           name="finalize-form"
+          optimizedVenues={optimizedVenues}
+          setOptimizedVenues={setOptimizedVenues}
           onSubmit={(data) => {
+            const selectedVenue = optimizedVenues?.find(
+              (venue) => venue.placeId === data.selectedVenueId
+            );
+
             scheduleEvent.mutate({
               pollId: poll.id,
               optionId: data.selectedOptionId,
-              locationId: data.selectedLocationId,
+              locationId: selectedVenue ? undefined : data.selectedLocationId,
               notify: data.notify,
+              venue: selectedVenue ? {
+                placeId: selectedVenue.placeId,
+                name: selectedVenue.name,
+                address: selectedVenue.address,
+              } : undefined,
             });
             props.onOpenChange?.(false);
           }}
