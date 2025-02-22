@@ -124,37 +124,10 @@ export class VenueOptimizer {
                         const placeTypes = place.types || [];
                         console.log(`Checking types for ${place.name}:`, placeTypes);
 
-                        // ALWAYS ensure the requested type is the primary type
+                        // ONLY check if our desired type is the primary type
                         if (placeTypes[0] !== venueType) {
                             console.log(`${place.name} excluded because primary type "${placeTypes[0]}" isn't ${venueType}`);
                             return false;
-                        }
-
-                        // Define excluded types based on the venue type we're searching for
-                        const excludedTypes: Record<string, string[]> = {
-                            "cafe": [
-                                "grocery_or_supermarket", "supermarket", "convenience_store",
-                                "department_store", "shopping_mall", "store"
-                            ],
-                            "restaurant": [
-                                "grocery_or_supermarket", "supermarket", "convenience_store",
-                                "department_store", "shopping_mall", "store", "cafe", "bar"
-                            ],
-                            "bar": [
-                                "grocery_or_supermarket", "supermarket", "convenience_store",
-                                "department_store", "shopping_mall", "store", "cafe", "restaurant"
-                            ]
-                            // Add more venue types and their excluded types as needed
-                        };
-
-                        // If we have exclusions for this venue type, apply them
-                        if (excludedTypes[venueType]) {
-                            // If it has any of these types, it's not a dedicated venue of our desired type
-                            if (placeTypes.some(t => excludedTypes[venueType].includes(t))) {
-                                console.log(`${place.name} excluded because it has excluded types:`,
-                                    placeTypes.filter(t => excludedTypes[venueType].includes(t)));
-                                return false;
-                            }
                         }
 
                         // Apply rating filter if specified
