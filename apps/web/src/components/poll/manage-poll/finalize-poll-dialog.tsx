@@ -39,6 +39,8 @@ import { useDayjs } from "@/utils/dayjs";
 import { StartingLocationsSummary } from "@/components/poll/starting-locations-summary";
 import { VenueOptimizer } from "@/utils/venue-optimizer";
 import { CheckIcon, PlusIcon } from "lucide-react";
+import { VenueMap } from "./venue-map";
+import { VenueMapSection } from "./venue-map-section";
 
 const formSchema = z.object({
   selectedOptionId: z.string(),
@@ -138,6 +140,8 @@ export const FinalizePollForm = ({
     placeId: string;
     name: string;
     address: string;
+    lat: number;
+    lng: number;
     metrics: {
       minDistance?: number;
       maxDistance?: number;
@@ -151,6 +155,8 @@ export const FinalizePollForm = ({
     placeId: string;
     name: string;
     address: string;
+    lat: number;
+    lng: number;
     metrics: {
       minDistance?: number;
       maxDistance?: number;
@@ -493,58 +499,61 @@ export const FinalizePollForm = ({
                 </Button>
               </div>
               {optimizedVenues && (
-                <div className="rounded-lg border bg-white p-4">
-                  <h3 className="mb-4 font-medium">Top Venue Recommendations</h3>
-                  <div className="space-y-4">
-                    {optimizedVenues.map((venue, index) => (
-                      <div
-                        key={venue.placeId}
-                        className={cn(
-                          "flex items-start gap-4 rounded-lg border p-4 relative",
-                          selectedVenueId === venue.placeId && "border-primary bg-primary/5"
-                        )}
-                      >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          {index + 1}
-                        </div>
-                        <div className="flex-grow">
-                          <div className="font-medium">{venue.name}</div>
-                          <div className="text-sm text-gray-500">{venue.address}</div>
-                          <div className="mt-2 text-sm">
-                            {form.getValues("optimizationType") === "distance" ? (
-                              <>
-                                <div>Min Distance: {(venue.metrics.minDistance || 0).toFixed(1)} km</div>
-                                <div>Max Distance: {(venue.metrics.maxDistance || 0).toFixed(1)} km</div>
-                                <div>Avg Distance: {(venue.metrics.avgDistance || 0).toFixed(1)} km</div>
-                              </>
-                            ) : (
-                              <>
-                                <div>Min ETA: {(venue.metrics.minEta || 0).toFixed(1)} min</div>
-                                <div>Max ETA: {(venue.metrics.maxEta || 0).toFixed(1)} min</div>
-                                <div>Avg ETA: {(venue.metrics.avgEta || 0).toFixed(1)} min</div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedVenueId(venue.placeId)}
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-white p-4">
+                    <h3 className="mb-4 font-medium">Top Venue Recommendations</h3>
+                    <div className="space-y-4">
+                      {optimizedVenues.map((venue, index) => (
+                        <div
+                          key={venue.placeId}
                           className={cn(
-                            "absolute right-4 top-4 rounded-full p-2 transition-colors",
-                            selectedVenueId === venue.placeId
-                              ? "bg-primary text-white hover:bg-primary/90"
-                              : "bg-gray-100 hover:bg-gray-200"
+                            "flex items-start gap-4 rounded-lg border p-4 relative",
+                            selectedVenueId === venue.placeId && "border-primary bg-primary/5"
                           )}
                         >
-                          {selectedVenueId === venue.placeId ? (
-                            <CheckIcon className="h-5 w-5" />
-                          ) : (
-                            <PlusIcon className="h-5 w-5" />
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            {String.fromCharCode(65 + index)}
+                          </div>
+                          <div className="flex-grow">
+                            <div className="font-medium">{venue.name}</div>
+                            <div className="text-sm text-gray-500">{venue.address}</div>
+                            <div className="mt-2 text-sm">
+                              {form.getValues("optimizationType") === "distance" ? (
+                                <>
+                                  <div>Min Distance: {(venue.metrics.minDistance || 0).toFixed(1)} km</div>
+                                  <div>Max Distance: {(venue.metrics.maxDistance || 0).toFixed(1)} km</div>
+                                  <div>Avg Distance: {(venue.metrics.avgDistance || 0).toFixed(1)} km</div>
+                                </>
+                              ) : (
+                                <>
+                                  <div>Min ETA: {(venue.metrics.minEta || 0).toFixed(1)} min</div>
+                                  <div>Max ETA: {(venue.metrics.maxEta || 0).toFixed(1)} min</div>
+                                  <div>Avg ETA: {(venue.metrics.avgEta || 0).toFixed(1)} min</div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedVenueId(venue.placeId)}
+                            className={cn(
+                              "absolute right-4 top-4 rounded-full p-2 transition-colors",
+                              selectedVenueId === venue.placeId
+                                ? "bg-primary text-white hover:bg-primary/90"
+                                : "bg-gray-100 hover:bg-gray-200"
+                            )}
+                          >
+                            {selectedVenueId === venue.placeId ? (
+                              <CheckIcon className="h-5 w-5" />
+                            ) : (
+                              <PlusIcon className="h-5 w-5" />
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                  <VenueMapSection venues={optimizedVenues} />
                 </div>
               )}
             </div>
@@ -558,7 +567,7 @@ export const FinalizePollForm = ({
             return (
               <FormItem className="relative">
                 <FormLabel htmlFor={field.name}>
-                  <Trans i18nKey="notifications" defaults="Notify" />
+                  <Trans i18nKey="notificationsOn" defaults="Notify" />
                 </FormLabel>
                 <FormControl>
                   <RadioGroup
@@ -626,6 +635,8 @@ export function FinalizePollDialog(props: DialogProps) {
     placeId: string;
     name: string;
     address: string;
+    lat: number;
+    lng: number;
     metrics: {
       minDistance?: number;
       maxDistance?: number;

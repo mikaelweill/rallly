@@ -26,6 +26,8 @@ type OptimizedVenue = {
     placeId: string;
     name: string;
     address: string;
+    lat: number;
+    lng: number;
     metrics: VenueMetrics;
 };
 
@@ -253,6 +255,8 @@ export class VenueOptimizer {
                     placeId: venue.place_id!,
                     name: venue.name!,
                     address: venue.vicinity!,
+                    lat: venue.geometry?.location.lat() ?? 0,
+                    lng: venue.geometry?.location.lng() ?? 0,
                     metrics,
                 };
             }),
